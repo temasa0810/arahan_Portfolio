@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<!-- 사례: 상용 보안 솔루션 우회와 결제 취약점(인가 진단). 비실명·조치완료. 식별자 제거한 스크린샷만 사용. -->
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상용 보안 솔루션 우회와 취약점 — 인가 진단</title>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2328;--sub:#57606a;--line:#d8dee4;
+    --accent:#2f5bd0;--red:#c62828;--green:#2e7d32;--codebg:#1b1f24;--codeink:#e6edf3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:900px;margin:0 auto;padding:30px 20px 80px}
+  a{color:var(--accent)}
+  .back{font-size:13px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin:10px 0 18px}
+  header.top h1{margin:6px 0 6px;font-size:25px;letter-spacing:-.3px}
+  header.top .meta{color:var(--sub);font-size:13px}
+  .banner{background:#eef3fe;border:1px solid #cdddfb;border-radius:8px;padding:12px 16px;font-size:13.5px;margin:16px 0}
+  .notice{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#6b5300;margin:14px 0}
+  h2{font-size:19px;margin:34px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  p{margin:9px 0}
+  .muted{color:var(--sub)}
+  code{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;background:#eceff3;border-radius:4px;padding:1px 5px}
+  ol.proc{margin:8px 0 8px 2px;padding-left:22px} ol.proc>li{margin:6px 0}
+  figure{margin:18px 0}
+  figure img{width:100%;border:1px solid var(--line);border-radius:8px;display:block}
+  figcaption{color:var(--sub);font-size:12.5px;margin-top:7px}
+  .hold{border:1px dashed #c3b36a;background:#fffdf3;border-radius:8px;padding:14px 16px;color:#6b5300;font-size:13px;margin:18px 0}
+  .impact{background:#f3f9f4;border:1px solid #bfe3c4;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:14px}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back"><a href="../../index.html">&larr; 포트폴리오 홈</a></p>
+
+<header class="top">
+  <h1>상용 보안 솔루션 우회와 취약점 &mdash; 인가 진단</h1>
+  <div class="meta">보안 솔루션 우회가 진단의 전제조건이 된 실제 사례 &middot; 인가 진단 &middot; 비실명 &middot; 조치 완료</div>
+</header>
+
+<div class="banner">
+  <b>방법론 기둥 &mdash; 전 파이프라인 + 암호화 탐지 함수의 런타임 복원(§5.2).</b>
+  로드되는 .so 식별 → 정적 분석(빈 진입점) → 암호화된 탐지 함수를 런타임 메모리 덤프로 복원 →
+  Frida 검증·우회 → 우회가 열어준 지점에서 실제 취약점 진단. → <a href="../../methodology.html">방법론 보기</a>
+</div>
+
+<div class="notice">
+  <b>비실명·조치완료 고지.</b> 대상 앱·사업자·보안 벤더·모듈/클래스명 등 식별 정보는 제거하였다.
+  스크린샷의 식별 가능한 문자열은 마스킹하였고, 구체적 덤프 절차·동작 우회 코드·오프셋·결제 페이로드는 포함하지 않는다.
+  기술된 취약점은 <b>조치 완료</b>되었으며, 모든 분석은 명시적 테스트 권한이 부여된 인가 진단에서 수행되었다.
+</div>
+
+<h2>분석·우회 프로세스 개요</h2>
+<p>모바일 앱에 적용된 보안 솔루션을 분석·우회하는 절차는 다음과 같다.</p>
+<ol class="proc">
+  <li>보안 탐지 함수가 있는 파일 확인 (<code>.so</code>, <code>.dex</code>)</li>
+  <li>해당 파일을 분석해 탐지 가능성이 있는 함수 추출 &mdash; Ghidra·IDA 정적 분석 → Frida 후킹·동적 디버깅</li>
+  <li>의심 함수를 Frida 후킹으로 <b>실제 발동 검증</b></li>
+  <li>검증된 탐지 함수를 후킹으로 변조하여 우회</li>
+</ol>
+<p>프로세스 자체는 복잡하지 않지만 분석·검증 단계에 많은 시간과 노력이 든다.
+   그럼에도 우회가 필수인 이유는, <b>우회하지 못하면 진단 자체가 불가능하거나 발견할 수 없는 취약점이 다수 존재</b>하기 때문이다.
+   <span class="muted">(보안상 민감한 정보는 제외하고 일부만 기술한다.)</span></p>
+
+<h2>1. 보안 탐지 함수가 존재하는 파일 식별</h2>
+<p>Frida 후킹으로 앱 실행 시 로드되는 모듈(<code>.so</code>) 목록을 수집했다. 공용 라이브러리
+   (<code>libmdf.so</code>, <code>libnetd_client.so</code>, <code>libEGL.so</code> 등)를 제외하면,
+   <code>&lt;패키지&gt;/split_config.arm64_v8a.apk!/lib/arm64-v8a/&lt;보안모듈&gt;.so</code> 가
+   <b>로드된 직후 앱이 종료</b>되는 것을 확인했다. 이 파일이 보안 솔루션과 관련될 가능성이 높아, 추출하여 리버싱 도구로 상세 분석한다.</p>
+<figure>
+  <img src="img/01-dlopen-log.png" alt="앱 실행 시 로드 .so 목록과 종료 시점 로그">
+  <figcaption>로드되는 .so를 로드 순서대로 기록 &mdash; 공용 라이브러리를 제외하고 역순으로 보면 분석 대상이 좁혀진다. (식별 정보 마스킹)</figcaption>
+</figure>
+
+<h2>2. .so 분석 및 보안 솔루션 우회</h2>
+<p>추출한 파일을 Ghidra로 열어 메인 진입점 <code>JNI_OnLoad</code>를 살펴보면 <b>아무 정보가 없다</b>.
+   이 파일은 과거 점검에서 발견된 취약점을 솔루션 업체가 보완하며, <b>보안 탐지 함수들을 암호화해 앱 실행 시 복호화</b>하는 방식으로 패치한 것이다.
+   따라서 실행 전 추출한 파일만으로는 탐지 함수를 볼 수 없어 분석이 불가능하다.</p>
+<figure>
+  <img src="img/02-jni-empty.png" alt="비어 있는 JNI_OnLoad — 간접 점프만 존재">
+  <figcaption>정적 추출본의 <code>JNI_OnLoad</code> &mdash; 간접 점프(indirect jump)만 보이고 로직은 런타임 복호화 전까지 비어 있다.</figcaption>
+</figure>
+<p>그러나 앱을 실행시킨 뒤 해당 <code>.so</code>가 로드되는 시점에 <b>메모리 덤프</b>로 추출하면,
+   복호화되어 채워진 코드를 확인할 수 있어 분석이 가능해진다. <span class="muted">(보안상 분석·덤프 과정은 생략한다.)</span></p>
+<figure>
+  <img src="img/03-decrypted-internals.png" alt="메모리 덤프로 복원된 탐지 로직 내부 구조">
+  <figcaption>런타임 복원본 &mdash; 디버깅·메모리 스캐너·루팅(magisk)·무결성 등을 플래그로 집계하는 탐지 구조가 드러난다. (식별 정보 없음)</figcaption>
+</figure>
+<p>복원된 탐지 함수들을 분석·검증한 뒤 Frida 후킹으로 보안 솔루션을 우회하여 앱을 정상 실행할 수 있게 되었다.
+   <span class="muted">(동작 우회 코드는 비공개.)</span></p>
+<figure>
+  <img src="img/05-module-list.png" alt="런타임 모듈 목록에서 보안 모듈 식별">
+  <figcaption>앱 실행 중 로드된 모듈 목록 &mdash; 보안 모듈을 식별해 후킹 대상을 특정한다. (모듈명·앱 식별 정보 마스킹)</figcaption>
+</figure>
+
+<h2>3. 보안 솔루션 우회로 발견한 취약점 — 결제 금액 조작</h2>
+<p>솔루션이 우회되자 "미납 요금" 결제 기능을 진단할 수 있게 되었다. 결제 금액을 조작하려면 처리 함수를 찾아 변조해야 하는데,
+   앱을 직접 변조하면 <b>무결성 검증에 탐지되어 실행이 불가능</b>하다. 그러나 솔루션 우회 후에는 Frida 후킹이 가능해져,
+   결제 처리 함수를 찾아 분석하고 후킹 코드를 작성할 수 있었다.</p>
+<figure>
+  <img src="img/04-unpaid-800.png" alt="미납 요금 800원이 발생한 상태">
+  <figcaption>미납 요금 "800원"이 발생한 상태. (앱 식별 정보 마스킹)</figcaption>
+</figure>
+<figure>
+  <img src="img/07-hook-oncreate.png" alt="결제 처리 Activity 후킹 지점">
+  <figcaption>솔루션 우회 후, 결제 처리 Activity의 <code>onCreate</code>에 후킹을 부착해 결제 금액 처리 흐름을 분석한다. (개발사·클래스 식별 정보 마스킹)</figcaption>
+</figure>
+<p>그 결과 미납 요금 <b>결제 금액을 "0원"으로 조작</b>하는 데 성공했다.</p>
+<figure>
+  <img src="img/06-paid-zero.png" alt="결제 금액 0원으로 결제 완료된 화면">
+  <figcaption>실제 결제 금액이 "0원"으로 처리된 화면. (앱 식별 정보 마스킹)</figcaption>
+</figure>
+<div class="impact">
+  <b>근본 원인.</b> 앱과 서버 간 결제 금액 <b>재검증 부재</b>. 클라이언트가 보낸 금액을 서버가
+  권위적으로 다시 확인하지 않아 클라이언트 측 조작이 그대로 반영되었다. <b>→ 조치 완료</b>(서버 측 검증 추가).
+</div>
+
+<h2>4. 보안 솔루션 우회의 중요성</h2>
+<p>이 외에도 통신 구간 진단은 프록시로 패킷을 캡처해야 하는데, <b>SSL Pinning</b>이 적용된 앱은
+   Burp Suite 같은 프록시 설정 시 통신이 차단되어 수집이 불가능하다.
+   "메모리 영역 중요정보 노출", "단말기 내 중요정보 노출" 점검도 루트 권한이 필요하나,
+   보안 솔루션이 적용된 앱은 루트 탐지로 차단되어 수행할 수 없다.</p>
+<div class="impact">
+  보안 솔루션을 우회하지 않으면 발견할 수 있는 취약점은 제한적이다 &mdash;
+  <b>우회는 그 자체가 목적이 아니라, 가려져 있던 실제 취약점을 진단 가능 상태로 만드는 전제</b>다.
+  그리고 클라이언트가 보낸 값은 신뢰 기점이 될 수 없다. <b>금액 같은 권위 값은 서버가 재검증</b>해야 한다
+  &mdash; 이는 안전 데모가 도달하는 결론과 동일하다.
+</div>
+
+<footer>
+  <p>인가 진단 &middot; 조치 완료 &middot; 식별 정보·동작 우회 코드·오프셋 비공개 &middot; <a href="../../index.html">포트폴리오 홈</a></p>
+</footer>
+
+</div>
+</body>
+</html>

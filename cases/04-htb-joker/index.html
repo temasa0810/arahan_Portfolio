@@ -1,0 +1,814 @@
+<html><head>
+<meta name="robots" content="noindex, nofollow"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>[WARGAME]App.hackthebox.com  joker_Write-up</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+	/* Paint a complete callout box on every PDF page fragment. */
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+}
+
+/* For default-background callouts, render the border outline. */
+.callout.block-color-default_background {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+/*
+ * Toggles and callouts hold arbitrary content, so they can easily be taller
+ * than a page. They must stay breakable: avoiding breaks inside them makes
+ * Chromium push the whole block onto the next page, which leaves the previous
+ * page mostly empty before every long toggle.
+ */
+details,
+aside {
+	margin: 1.25em 0;
+}
+
+/* Keep a toggle's title on the same page as the start of its content. */
+summary {
+	page-break-after: avoid;
+	break-after: avoid;
+}
+
+/*
+ * Toggle headings render as <h1/h2/h3 style="display:inline-block"> inside
+ * <summary>. Without this reset, the heading's margin-top pushes it below the
+ * ::marker (▼), so the triangle and the title appear on separate lines.
+ */
+summary h1,
+summary h2,
+summary h3,
+summary h4 {
+	margin-top: 0;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+
+	table.collection-content {
+		width: 100%;
+		table-layout: fixed;
+	}
+
+	table.collection-content th,
+	table.collection-content td {
+		overflow-wrap: anywhere;
+	}
+
+	table.collection-content td > .user,
+	table.collection-content td > time {
+		white-space: pre-wrap;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content-wrapper {
+	overflow-x: auto;
+}
+
+@media only print {
+	.collection-content-wrapper {
+		overflow-x: visible;
+	}
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	gap: 46px;
+}
+
+.column {
+	min-width: 0;
+	overflow: hidden;
+}
+
+.column > *:first-child {
+	margin-top: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding-inline: 0.125rem;
+	padding-block: 0.375rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+table {
+	border-collapse: collapse;
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol.numbered-list.numbered-list-digits-2 {
+	padding-inline-start: 2em;
+}
+
+ol.numbered-list.numbered-list-digits-3plus {
+	padding-inline-start: 2.4em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+/*
+ * Render emoji icons using a ::before pseudo-element to keep the glyph
+ * out of the DOM textContent traversal. This avoids double-rendering icons
+ * in callouts and page titles.
+ * NOTE(slim/html-export-pseudo-icons): I can't tagref this because it will
+ * flag as a duplicate tag after codegen.
+ */
+.icon[data-emoji]::before {
+	content: attr(data-emoji);
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	margin-right: 0.4em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.tab {
+	margin: 1.25em 0;
+	padding-inline: 1rem;
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style><style>@import url('https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex-swap.min.css')</style></head><body><article id="00e88667-3ac5-4136-9a15-ca55d52a29a7" class="page sans"><header><h1 class="page-title" dir="auto">[WARGAME]App.hackthebox.com  joker_Write-up</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><p id="0e400295-70ae-478a-9c8e-dad7eaf5b847" class="" dir="auto">
+</p><figure id="1b0c6cff-4ab3-4abf-b358-4fb016fc57cb" class="image" data-notion-image="image1.png" dir="ltr"><a href="image1.png"><img style="width:700px" src="image1.png"/></a></figure><p id="bff8ff19-64f1-4c2d-82df-396d61d1ed01" class="" dir="auto">문제를 만든 제작자의 의도를 이해하기 위해 문제 설명을 반드시 확인해봅시다. 해석하면 &quot;구글 스토어에 게시되어 설치되는 악성 소프트웨어들에 대해 블랙 리스트에 추가하기 위해 <strong>명령 및 제어 서버의 주소</strong>를 식별할 수 있도록 도와달라&quot;는 내용입니다.</p><div id="81e89a0b-2a07-4438-9f17-38a3db337da9" class="column-list" data-notion-column-list="" dir="auto"><div id="25368abd-05de-4422-ad9a-dbe62643ff87" style="width:18.75%" class="column" data-notion-column-ratio="0.1875" dir="auto"><figure id="0760b3de-0d62-4327-9a57-d374c2f51468" class="image" data-notion-image="Untitled.png" dir="ltr"><a href="Untitled.png"><img style="width:132px" src="Untitled.png"/></a></figure></div><div id="8b8e1dfa-1886-467f-9c43-b65e036f0c50" style="width:81.25%" class="column" data-notion-column-ratio="0.8125" dir="auto"><figure id="248dfec4-cab0-46b7-97f2-10926091c98b" class="image" style="text-align:center" data-notion-image="image2.png" dir="ltr"><a href="image2.png"><img style="width:624px" src="image2.png"/></a></figure><p id="4bfb5594-fa3d-4e65-ad49-559ad905ea49" class="" dir="auto">
+</p></div></div><p id="a414a66d-f9b4-48e7-a402-88b38a0822e0" class="" dir="auto">앱을 실행하면 빙고 게임을 하게 되고 문제를 풀 수 있는 단서는 보이질 않습니다. 문제의 단서를 찾기 위해 &quot;Jadx(Decompile Tool)&quot;로 앱을 분석해봅시다. &quot;AndroidManifest.xml&quot; 파일에서 &quot;android.intent.action.MAIN&quot;이 정의된 &quot;meet.the.joker.MainActivity&quot; 액티비티가 앱이 실행될 때 처음 호출됩니다.</p><h3 id="8c874ec9-b372-49cb-9bd8-01f0a7389ee0" class="" dir="auto">[meet.the.joker.MainActivity]</h3><figure id="ee0b8976-2df0-44d1-883e-f288d067b239" class="image" data-notion-image="image3.png" dir="ltr"><a href="image3.png"><img style="width:700px" src="image3.png"/></a></figure><p id="19bb45c4-d760-491b-86e2-75f9c5991622" class="" dir="auto">먼저 앱의 구조를 확인하면 난독화가 적용되어 있음을 알 수 있습니다. &quot;meet.the.joker.MainActivity&quot;의 시작 함수인 &quot;onCreate&quot;를 기점으로 분석하면, &quot;playerTap()&quot; 함수는 앱 실행 시 볼 수 있는 빙고 게임 로직입니다. 그러나 그 외에  “flag” 값과 관련된 로직은 찾아 볼 수 없었습니다.</p><p id="9cabd530-6b32-4d22-b580-7a1996ee61be" class="" dir="auto">
+</p><h3 id="e362badb-05be-4d30-ab83-d3c38b72b0db" class="" dir="auto">[AndroidManifest.xml]</h3><figure id="a0aefc9b-cea8-4972-8bff-d0e083e25af6" class="image" data-notion-image="image4.png" dir="ltr"><a href="image4.png"><img style="width:700px" src="image4.png"/></a></figure><p id="2dec1fef-7483-4f5f-b26c-dae0f66cb31a" class="" dir="auto">다시 &quot;AndroidManifest.xml&quot; 파일 &quot;&lt;provider&gt;&quot;탭에서 가장 의심스러운 &quot;meet.the.joker.JokerBr&quot; 앱 이 실행될 떄 참조되고 있습니다.</p><p id="f650f166-d681-460e-a357-950a304b5b3f" class="" dir="auto">
+</p><p id="39693ab3-1972-4ccc-a7a9-e5f5dd436929" class="" dir="auto">[<strong>meet.the.joker.JokerBr</strong>]</p><figure id="97302c9c-c98b-493f-8982-8bceda8b4e21" class="image" data-notion-image="image5.png" dir="ltr"><a href="image5.png"><img style="width:700px" src="image5.png"/></a></figure><p id="d28a9445-588f-4dba-8936-9580657e2a5c" class="" dir="auto">&quot;meet.the.joker.JokerBr&quot;의 onCreate() 살펴보면 특정 조건을 충족하면 실행되는 함수가 있고, 실행되는 a.RunnableC000a() 함수를 따라가면, &quot;a2.a&quot; 클래스에 속한 함수임을 알 수 있다.</p><p id="2f0d6e7d-6b16-45f5-97b4-b62ea0881895" class="" dir="auto">&quot;a2.a&quot;클래스를 분석하면 클래스의 흐름은 다음과 같이 진행된다.</p><p id="5ae8e017-468f-4e09-8f9a-66c406abf51e" class="" dir="auto">“run() → b()복호화된 문자열을 가지고 서버연결 및 응답결과과 &quot;200&quot; 이면 다음 로직 진행 → a()</p><p id="2ea39ee2-22a5-495b-aff3-e3af0b1dceda" class="" dir="auto"> </p><h3 id="d8aa2706-8542-4740-9d62-82184c6d1051" class="" dir="auto">[c.a.o() 복호화함수]</h3><figure id="e8490b9c-0a1c-49d4-ae3a-d8612d83a8e4" class="image" data-notion-image="image6.png" dir="ltr"><a href="image6.png"><img style="width:700px" src="image6.png"/></a></figure><figure id="49c52078-f57f-4c73-b027-10188f50540b" class="image" data-notion-image="image7.png" dir="ltr"><a href="image7.png"><img style="width:700px" src="image7.png"/></a></figure><p id="770ef32f-92de-4d91-8f60-edd0c7c05493" class="" dir="auto">먼저 암호화된 문자열을 복호화 하기위해 &quot;c.a.o&quot; 함수를 분석하여 복호화를 시도한다. </p><p id="d3019f2c-96f1-4e52-bf4a-8fb72c6e93c6" class="" dir="auto">2개의 문자열을 받아 xor연산으로 암복호화하는 함수이다. 해당 함수를 거쳐 암호화되어 있는 문자열이 복호화 된다.</p><figure id="c577913b-84cf-4517-9e0e-0735c3180059" class="image" data-notion-image="image8.png" dir="ltr"><a href="image8.png"><img style="width:700px" src="image8.png"/></a></figure><p id="66ab4f3e-2005-44bf-9fbc-7d5c9ab23da8" class="" dir="auto">복호화 함수를 python으로 변환하여 암호화되어있는 ”String f40a” 변수의 문자열을 복호화하면 <strong>&quot;io/m/l/l/d&quot;</strong> 파일 경로로 보이는 문자열이 생성된다.</p><h2 id="8ed71405-2ba9-4073-8d71-2ad84aaa623b" class="" dir="auto">a2.a.b()_통신 함수</h2><figure id="84d295d3-4098-4c39-9822-9e9666af7c32" class="image" data-notion-image="image9.png" dir="ltr"><a href="image9.png"><img style="width:700px" src="image9.png"/></a></figure><p id="669dbcc4-eee8-40f0-bbd8-eadd9d7edb7a" class="" dir="auto">마찬가지로 통신함수에 암호화되어 있는 문자열을 복호화 해보자</p><figure id="066725df-251f-4d7c-afb4-a6bf64e48b28" class="image" data-notion-image="image10.png" dir="ltr"><a href="image10.png"><img style="width:700px" src="image10.png"/></a></figure><p id="eaaa7729-1bcf-4180-bfd7-2eca3f433141" class="" dir="auto"><strong>&quot;</strong><a href="https://play.google.com/store/apps/details?id=meet.the.joker"><strong>https://play.google.com/store/apps/details?id=meet.the.joker</strong></a><strong>&quot;</strong> url 경로가 생성되었다. 해당 URL 은 접속해도 404가 뜬다. 200이라 가정하고 다음 로직을 보면</p><p id="f53442e2-cc93-40bc-9b5e-24cdf5e23098" class="" dir="auto">&quot;a(context, f40a)&quot; 앞에 복호화 했던 <strong>&quot;io/m/l/l/d&quot;</strong> 파일 경로를 인자로 받아 진행한다. (따라가보면 &quot;a2.a.a() 함수)</p><p id="1545f025-110e-4dc7-900e-5d6f95c8506a" class="" dir="auto">정리하면 “암호화된 문자열 복호화 → a2.a.b() → a2.a.a()” 진행된다.</p><h2 id="a235d392-372f-4b9d-887c-7a6a06d5797d" class="" dir="auto">a2.a.a() 함수 암호화상태</h2><figure id="732cfc54-8742-4fa2-8d6d-461be1166c71" class="image" data-notion-image="image11.png" dir="ltr"><a href="image11.png"><img style="width:700px" src="image11.png"/></a></figure><h2 id="4dc9a169-2ed3-4a97-8d55-f0936e18599c" class="" dir="auto">a2.a.a() 함수 복호화상태</h2><figure id="66c89e29-d123-4ed5-b99c-73286b1ca677" class="image" data-notion-image="image12.png" dir="ltr"><a href="image12.png"><img style="width:700px" src="image12.png"/></a></figure><p id="f0a3a625-bab0-4733-b2bd-b47ecefa60fb" class="" dir="auto">복호화된 함수를 분석해보면, &quot;assets 폴더에서 &quot;io/m/l/l/d&quot; 경로 안에 있는 파일 중 끝이 &quot;301.txt&quot;파일을 찾아, 1024 바이트를 할당한 후, c.a.v() 함수에 &quot;ma17FEC2_lYuoNQ$_To99u_e0kINhw_Bzy&quot;</p><p id="7bab66e3-1bf3-474a-a1ce-1494d9d48819" class="" dir="auto">, 할당된 1024바이트 파일경로와, 새로운 &quot;.temp&quot; 경로를 인자로 전달한다.</p><h1 id="c03561d2-4ac9-4431-b24c-22391340542d" class="" dir="auto">c.a.v()_암호화 함수</h1><figure id="69cfcf32-3291-4ea5-a69d-a3be4ac980d0" class="image" data-notion-image="image13.png" dir="ltr"><a href="image13.png"><img style="width:700px" src="image13.png"/></a></figure><p id="9e627ad0-e0de-4359-8836-61da386b8b90" class="" dir="auto">c.a.v() 함수를 분석해보면 AES128 암호화 방식으로 &quot;ma17FEC2_lYuoNQ$_To99u_e0kINhw_Bzy&quot; 키를 사용하여 암호화하여 &quot;assets/io/m/l/l/d&quot; 경로안에 &quot;301.txt&quot;로 끝나는 파일명으로 파일을 생성한다.</p><p id="a95d41a9-43b1-4418-9076-052ba6117577" class="" dir="auto">이는 곧 해당 파일을 복호화해야 문제를 풀 수 있다는 것이다</p><p id="75dc7e4c-6c17-4adc-b156-7aabb83ec71d" class="" dir="auto">
+</p><figure id="33318be3-faac-4d5a-875e-8cee6e1a3e25" class="image" data-notion-image="image14.png" dir="ltr"><a href="image14.png"><img style="width:700px" src="image14.png"/></a></figure><p id="afa41a47-c8e5-4411-9300-c42502539036" class="" dir="auto">해당 경로에서 301.txt로 끝나느 파일을 열어보면 암호화되어 있다.</p><p id="7645fff9-4383-4253-9880-7af6be228e89" class="" dir="auto">
+</p><figure id="3ebec4a8-ef32-46b9-9489-a09a88fe0607" class="image" data-notion-image="image15.png" dir="ltr"><a href="image15.png"><img style="width:617.9861450195312px" src="image15.png"/></a></figure><p id="1bf2e533-fc6d-421c-bbf7-28a30aeb5877" class="" dir="auto">c.a.v() 함수의 AES 암호화 로직을 분석하여 올바르게 복호화 하면 위와 같이 &quot;.SO&quot; 파일을 얻을 수 있다.</p><p id="d0f112d3-9fb9-4f0c-8724-346fdd0fdc8c" class="" dir="auto">
+</p><figure id="d76a4917-023f-4656-a58e-f0813f783c81" class="image" data-notion-image="image16.png" dir="ltr"><a href="image16.png"><img style="width:700px" src="image16.png"/></a></figure><p id="27a39128-900d-4e57-8825-8a0b4e11e7b4" class="" dir="auto">해당 파일을 ida 로 분석해보자. 분석에 시작인 문자열 검색을 해보면 눈에 확 띠는 문자열을 발견할 수 있다.</p><p id="7a812d9b-eaf4-4286-bc74-125759d98b4a" class="" dir="auto">
+</p><figure id="df2cade5-acc0-4813-86a6-36b105feb64e" class="image" data-notion-image="image17.png" dir="ltr"><a href="image17.png"><img style="width:700px" src="image17.png"/></a></figure><p id="f734b20a-caab-4915-aae0-1ecd6fdcff5d" class="" dir="auto">&quot;The flag is:&quot; 이 문자열이 쓰인 함수를 따라가보자</p><p id="9d8dab8d-7469-47be-a697-dd6f7334ac7f" class="" dir="auto">
+</p><figure id="be7463c8-ff8d-4fc3-8c03-4600e7605a9c" class="image" data-notion-image="image18.png" dir="ltr"><a href="image18.png"><img style="width:615.9896240234375px" src="image18.png"/></a></figure><p id="7d5bdc45-a08e-4897-95a8-66877183a191" class="" dir="auto"><strong>d(char *, int)</strong> 함수에서 <strong>kdf(kdf=”</strong>The flag is:”) 변수로 사용되어지고 있다. 해당 함수를 분석 하기 위해선  a1(arg첫번째)값을 알아야 한다. 다시 d() 함수를 호출한 함수를 찾아내어 a1 값을 알아내야 한다,</p><p id="a0597952-5dcf-4250-a7cb-f28dc1235108" class="" dir="auto">d() 함수를 호출한 함수를 찾기 위해 XREF Go! 진행하면… a()함수를 만나게 된다.</p><p id="7a2330e3-cc38-4b80-b836-e3f4ff82b40e" class="" dir="auto">
+</p><figure id="a4f7b09c-765d-49b2-8246-6167f760f0e5" class="image" data-notion-image="image19.png" dir="ltr"><a href="image19.png"><img style="width:700px" src="image19.png"/></a></figure><p id="301a35c1-1f45-426d-92ae-7a0aa2d9d442" class="" dir="auto">a() 함수에서 d(v10,v9) 로 호출하고 있다. 호출할 때 사용되는 v10, v9 값을 알기 위해 a() 함수를 분석하자.</p><p id="a1a36f54-5bd0-4efe-b7d4-87d5a56f3c28" class="" dir="auto">
+</p><figure id="75f2ead5-6614-4cce-be3a-0991776fac34" class="image" data-notion-image="image20.png" dir="ltr"><a href="image20.png"><img style="width:586.99658203125px" src="image20.png"/></a></figure><p id="45c667ba-d313-43f3-a80b-b43ed0167fe9" class="" dir="auto">우리의 목표인 d(v10,v9)을 호출하는 로직을 만나려면 &quot;result&quot; 값이 존재해야 한다.</p><p id="127b6d8c-c2a6-4167-b38c-6451af7c4376" class="" dir="auto"> result 값은 &quot;AAssetManager_open(v3, fn, 0LL)&quot;</p><figure id="bbe0c03a-57fe-497b-acff-0396a5e9fc7b" class="image" data-notion-image="image21.png" dir="ltr"><a href="image21.png"><img style="width:700px" src="image21.png"/></a></figure><p id="13462f8c-a3e7-4afb-b9a8-e2fd606515bd" class="" dir="auto">결과 값을 갖고 있다. &quot;AAssetManager_open&quot; 함수는 2번째 인자(fn)로 전달된 파일명을 &quot;assets&quot;폴더안에서 여는 함수이다.</p><p id="6c78e1cb-7d7e-4567-97d2-56d49c3791fe" class="" dir="auto">
+</p><figure id="4680754a-7cb7-4bac-aba1-b3643c021291" class="image" data-notion-image="image24.png" dir="ltr"><a href="image24.png"><img style="width:700px" src="image24.png"/></a></figure><figure id="abc074bf-70aa-4fe2-b31f-c76d16346f39" class="image" data-notion-image="image22.png" dir="ltr"><a href="image22.png"><img style="width:700px" src="image22.png"/></a></figure><figure id="fd6f4507-54cf-45c8-9da1-8684ce96a8ee" class="image" data-notion-image="image23.png" dir="ltr"><a href="image23.png"><img style="width:700px" src="image23.png"/></a></figure><p id="da05c87f-16c8-483e-a869-2f8c66e48948" class="" dir="auto">fn 값을 알기 위해 위에 &quot;do ~ while&quot; 로직을 분석해보자.</p><p id="d27f5f96-2245-4fb9-979a-8471bcb3f0b8" class="" dir="auto">fn=&quot;71q3q2q2q:q;7&lt;;.610;0+3&lt;;,0x-;mnnp*&amp;*&quot; , k=&quot;^&quot; 값을 가지고 있다. 해당 로직을 파이썬코드로 구현해서 실행하면 fn 의 값은 &quot;io/m/l/l/d/eibephonenumbern&amp;se300.txt&quot; 이다. </p><p id="ccf07921-0691-44ce-be1e-3532075d76d5" class="" dir="auto">즉 &quot;result&quot; 에는 &quot;/assets/io/m/l/l/d/eibephonenumbern&amp;se300.txt&quot; 파일 내용이 담겨있다.</p><p id="ca7f9aed-abaa-4996-bf1b-2d123e2d93be" class="" dir="auto">
+</p><figure id="32ea0ef0-ad28-409c-b9fd-2819b29b5bee" class="image" style="text-align:left" data-notion-image="image25.png" dir="ltr"><a href="image25.png"><img style="width:412.98614501953125px" src="image25.png"/></a></figure><p id="2503bf9e-2b2d-4271-8c2d-122b9dffc12e" class="" dir="auto">알아낸 정보를 토대로 d(v10,v9) 호출 시 v10 값은 &quot;/assets/io/m/l/l/d/eibephonenumbern&amp;se300.txt&quot; 파일 내용이며, v9 값은</p><p id="a0bf2b17-4836-4deb-a47d-5a5a2c621ef1" class="" dir="auto">해당 파일의 크기이다.</p><p id="3cb5fc9d-d506-4866-8567-7c3269433b19" class="" dir="auto">
+</p><h2 id="b5caa89f-85dc-42c1-bf40-413ef5adb512" class="" dir="auto">d(v10,v9)함수 암호화 로직</h2><figure id="c2a479db-61fd-4ea0-a0ad-155195814847" class="image" data-notion-image="image26.png" dir="ltr"><a href="image26.png"><img style="width:700px" src="image26.png"/></a></figure><p id="4492bbef-d602-486d-9b08-119c595e62f6" class="" dir="auto">다시 d(v10,v9) 함수를 분석 해보면 &quot;/assets/io/m/l/l/d/eibephonenumbern&amp;se300.txt&quot; 파일을 암호화 시키는 로직이 보인다. 마찬가지로 복호화해야 한다.</p><p id="d6b6d007-9862-48e4-83dc-bdc0f062a1f4" class="" dir="auto">
+</p><figure id="595c8d6f-b978-473f-b27f-11dfe4f96229" class="image" data-notion-image="image28.png" dir="ltr"><a href="image28.png"><img style="width:631.99658203125px" src="image28.png"/></a></figure><p id="6db6242d-ab4e-43e7-b7b3-c06984670b04" class="" dir="auto">해당경로로 가서 파일을 열어보면 암호화되어 있다.</p><p id="6f376f68-7aee-4c34-89d2-32ae233cf3bb" class="" dir="auto">암호화되어 있더 &quot;/assets/io/m/l/l/d/eibephonenumbern&amp;se300.txt&quot; 파일을 정상적으로 복호화 하면 아래와 같이 dex 파일이 생성된다.</p><figure id="7bd60449-a6c4-4436-ae2f-4f8d95561f21" class="image" data-notion-image="Untitled%201.png" dir="ltr"><a href="Untitled%201.png"><img style="width:707.9971313476562px" src="Untitled%201.png"/></a></figure><p id="80fdbc7f-79d2-4723-865e-113b7aa4c99e" class="" dir="auto">“Jadx”로 복호화한 파일을 열어보면 flag를 획득할 수 있다.</p><p id="a17b09fe-fe58-4b6d-8610-5e973b6d5381" class="" dir="auto">
+</p></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

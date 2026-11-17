@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- 윤리·인가 고지 페이지. 포트폴리오 전체에 적용되는 범위·원칙. -->
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>윤리·인가 고지 — 모바일 보안 포트폴리오</title>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2328;--sub:#57606a;--line:#d8dee4;--accent:#2f5bd0;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:860px;margin:0 auto;padding:30px 20px 80px}
+  a{color:var(--accent)}
+  .back{font-size:13px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin:10px 0 18px}
+  header.top h1{margin:6px 0 6px;font-size:25px;letter-spacing:-.3px}
+  header.top .meta{color:var(--sub);font-size:13px}
+  h2{font-size:19px;margin:32px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  p{margin:9px 0} ul{margin:8px 0 8px 2px;padding-left:22px} li{margin:7px 0}
+  .muted{color:var(--sub)}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#eef1f5;font-weight:600}
+  blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);background:#f0f4fc;color:#2f4063;font-size:14px}
+  footer{margin-top:46px;border-top:1px solid var(--line);padding-top:16px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back"><a href="index.html">&larr; 포트폴리오 홈</a></p>
+
+<header class="top">
+  <h1>인가 및 윤리 고지</h1>
+  <div class="meta">본 포트폴리오 전체에 적용되는 범위·원칙</div>
+</header>
+
+<p>본 포트폴리오에 수록된 모든 분석은 아래 조건에서 수행되었다.</p>
+
+<ul>
+  <li><b>인가된 범위에서만 수행.</b> 모든 실사례는 (a) 명시적 테스트 권한이 부여된 <b>인가된 보안 평가</b>,
+      또는 (b) HackTheBox 등 <b>공인 CTF·워게임</b> 환경에서 진행되었다. 권한 없는 제3자 서비스·계정에 대한 접근이나 공격은 포함하지 않는다.</li>
+  <li><b>책임있는 공개 원칙 준수.</b> 인가된 평가에서 발견된 취약점은 관련 주체에 보고되었으며,
+      조치 완료 또는 공개 동의를 전제로만 기술한다. 식별 가능한 민감 정보는 비실명화·요약 처리하였다.</li>
+  <li><b>무기화된 산출물 비포함.</b> 본 포트폴리오는 <b>방법론과 접근법</b>을 설명하며,
+      즉시 악용 가능한 결과물(상용 제품의 동작하는 우회 코드, 탐지 함수 오프셋, 완성된 익스플로잇, 결제·인증 우회 페이로드)은 공개하지 않는다.</li>
+  <li><b>교육·방어 목적.</b> 본 자료의 목적은 방어 설계에 활용 가능한 정확한 분석을 공유하는 데 있다.
+      부정한 이용(치트 배포, 무단 변조, 금전적 이득)을 위한 것이 아니며, 그러한 사용을 승인하지 않는다.</li>
+</ul>
+
+<blockquote>상용 제품·고객사·보안 벤더의 실명과 구체적 취약 지점은 계약·법적 의무에 따라 비공개하거나 일반화하여 기술한다.</blockquote>
+
+<h2>포함 / 비포함 범위</h2>
+<table>
+  <tr><th>공개하는 것</th><th>공개하지 않는 것</th></tr>
+  <tr><td>분석 방법론·자동화 접근</td><td>상용/금융 앱의 동작하는 우회 코드</td></tr>
+  <tr><td>비실명화·요약된 실사례 writeup</td><td>고객사 데이터·내부 정보·계약 내용</td></tr>
+  <tr><td>공인 CTF 풀이 (전체 공개 가능)</td><td>탐지 함수 오프셋·kill 루틴 등 즉시악용 정보</td></tr>
+  <tr><td>타깃 비종속 재사용 기술·도구</td><td>개인정보(이메일·디바이스·경로 등)</td></tr>
+  <tr><td>판단 규율·엔지니어링 설계</td><td>미조치 상태인 실서비스의 구체 약점</td></tr>
+</table>
+
+<h2>사용 제한</h2>
+<p>본 저장소의 자료는 <b>학습 및 방어적 보안 연구 목적</b>으로만 제공된다. 자료의 전부 또는 일부를
+   권한 없는 시스템에 대한 공격, 상용 서비스 무단 변조, 그 밖의 불법적·비윤리적 목적에 사용하는 것을 금한다.
+   자료 이용에 따른 책임은 이용자에게 있다.</p>
+
+<h2>비배포 안내</h2>
+<p>본 포트폴리오의 핵심 도구(MB_BYPASS)는 상용·금융 앱에 대한 동작하는 우회 로직을 포함하므로
+   <b>의도적으로 공개 배포하지 않는다</b>. 공개되는 것은 설계·방법론·비실명화 사례·안전 데모이며,
+   도구의 소스·바이너리는 배포하지 않는다.</p>
+
+<footer>
+  <p>문의 <code>arahan</code> &middot; <a href="https://github.com/temasa0810">github.com/temasa0810</a> &middot; <a href="index.html">포트폴리오 홈</a></p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>분석 자동화 하네스와 판단 규율 — 방법론</title>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2328;--sub:#57606a;--line:#d8dee4;--accent:#2f5bd0;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.75;font-size:15px}
+  .wrap{max-width:860px;margin:0 auto;padding:30px 20px 80px}
+  a{color:var(--accent)}
+  .back{font-size:13px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin:10px 0 18px}
+  header.top h1{margin:6px 0 6px;font-size:25px;letter-spacing:-.3px}
+  header.top .meta{color:var(--sub);font-size:13px}
+  .notice{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:11px 15px;font-size:12.5px;color:#6b5300;margin:16px 0}
+  h2{font-size:20px;margin:36px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h3{font-size:15.5px;margin:22px 0 6px;color:var(--accent)}
+  p{margin:9px 0} .muted{color:var(--sub)}
+  code{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;background:#eceff3;border-radius:4px;padding:1px 5px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#eef1f5;font-weight:600}
+  ul{margin:8px 0 8px 2px;padding-left:22px} li{margin:5px 0}
+  blockquote{margin:14px 0;padding:11px 16px;border-left:3px solid #c3b36a;background:#fffdf3;color:#6b5300;font-size:13.5px}
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:24px 18px;margin:16px 0; text-align:center; overflow-x: auto;}
+  footer{margin-top:46px;border-top:1px solid var(--line);padding-top:16px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back"><a href="index.html">&larr; 포트폴리오 홈</a></p>
+
+<header class="top">
+  <h1>모바일 보안 솔루션 리버싱 &mdash; 분석 자동화 하네스와 판단 규율</h1>
+  <div class="meta">멀티에이전트 하네스 · 결론 게이트 5원칙 · 지식 재활용 · 기술문서</div>
+</header>
+
+<div class="notice">
+  본 문서는 방법론과 엔지니어링 접근만 다룬다. 특정 제품의 우회 코드·오프셋·고객 데이터는 포함하지 않는다.
+  모든 분석은 인가된 보안 평가 또는 공인 CTF 환경에서 수행되었다. → <a href="notice.html">윤리·인가 고지</a>
+</div>
+
+<h2>개요</h2>
+<p>상용 RASP·안티치트가 적용된 모바일 애플리케이션의 탐지 로직을 분석할 때, 산출물의 가치는
+   "우회 성공 여부"가 아니라 <b>결론의 정확도</b>에서 나온다. 분석 결과를 방어 설계에 쓰려면,
+   어디까지가 런타임 실측이고 어디부터가 정적 추정인지가 명확히 구분되어야 한다.</p>
+<p>본 문서는 그 요구를 반복 가능하게 충족하기 위해 구축한 세 가지 체계를 기술한다 &mdash;
+   <b>(1) 분석을 병렬화하는 멀티에이전트 하네스</b>, <b>(2) 모든 결론을 실측 기준으로 게이트하는 판단 규율</b>,
+   <b>(3) 분석 결과를 구조화해 다음 분석에 재사용하는 지식 베이스</b>.</p>
+
+<h2>1. 배경 — 세 가지 반복적 실패 요인</h2>
+<table>
+  <tr><th>실패 요인</th><th>내용</th><th>대응 체계</th></tr>
+  <tr><td>분석 노동의 비선형성</td><td>Java 수백 클래스 + Native 수천 함수를 교차 분석해야 하며 맥락이 끊기기 쉽다</td><td>멀티에이전트 하네스 (2장)</td></tr>
+  <tr><td>성급한 결론</td><td>실측 없이 "불가/서버권위" 등을 단정하고, 계측 아티팩트를 타깃 방어로 오인한다</td><td>판단 규율 (3장)</td></tr>
+  <tr><td>분석 지식의 휘발</td><td>세션·분석가가 바뀔 때마다 이미 규명된 사실을 재도출한다</td><td>지식 베이스 (4장)</td></tr>
+</table>
+
+<h2>2. 멀티에이전트 분석 하네스</h2>
+<p>분석을 역할별 에이전트로 분리하고, 종합·검증 단계를 삽입하여 단일 파이프라인으로 구성한다.
+   각 에이전트는 전용 분석 인터페이스(디컴파일러·디스어셈블러·동적 계측)를 직접 호출한다.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 720 610" width="100%" style="max-width:720px;height:auto" role="img"
+     aria-label="멀티에이전트 분석 하네스 파이프라인 — 입력에서 병렬 정적분석, 리더 종합, 반대자 게이트, Frida 동적검증, 리포트까지. 지식 베이스가 각 단계에 참조·갱신된다." xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .diagram text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+    .ttl{font-weight:700;font-size:14px;fill:#1f2328}
+    .sub{font-size:11.5px;fill:#57606a}
+    .lane{font-weight:700;font-size:12px;fill:#2f5bd0;letter-spacing:.2px}
+    .elab{font-size:11.5px;font-weight:600;fill:#b7791f}
+    .pass{font-size:11.5px;font-weight:600;fill:#2e7d32}
+    .ic{fill:none;stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#475569"/></marker>
+    <marker id="ara" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#b7791f"/></marker>
+    <marker id="arg" markerWidth="8" markerHeight="8" refX="6" refY="2.6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,2.6 L0,5.2 Z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <!-- 연결선 (노드보다 먼저 그려 뒤에 깔리게) -->
+  <g fill="none">
+    <!-- 메인 흐름 (실선) -->
+    <path d="M250,68 V92" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M166,228 C166,250 250,250 250,266" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M334,228 C334,250 250,250 250,266" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,324 V350" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,414 V446" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,504 V530" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <!-- 반려 피드백 (점선 앰버) -->
+    <path d="M100,388 C52,388 52,300 100,300" stroke="#b7791f" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ara)"/>
+    <!-- 지식 베이스 참조 (점선 그레이) -->
+    <path d="M486,388 C440,380 430,300 400,298" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+    <path d="M486,400 L404,386" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+    <path d="M486,414 C440,430 430,470 404,474" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+  </g>
+
+  <!-- 엣지 라벨 -->
+  <text transform="translate(44,360) rotate(-90)" class="elab" text-anchor="middle">반려 · 미규명 격하</text>
+  <text x="262" y="434" class="pass">서명 통과</text>
+
+  <!-- ① 입력 -->
+  <rect x="100" y="20" width="300" height="48" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.4"/>
+  <circle cx="126" cy="44" r="13" fill="#e2e8f0" stroke="#475569" stroke-width="1.3"/>
+  <g class="ic" stroke="#475569" transform="translate(126,44)"><rect x="-5" y="-8" width="10" height="16" rx="2"/><line x1="-2" y1="5" x2="2" y2="5"/></g>
+  <text x="148" y="49" class="ttl">분석 대상 앱 &#8201;<tspan class="sub">(입력)</tspan></text>
+
+  <!-- 병렬 정적 분석 레인 -->
+  <rect x="66" y="96" width="368" height="150" rx="12" fill="#fbfcfe" stroke="#c9d6ef" stroke-width="1.3" stroke-dasharray="6 5"/>
+  <text x="250" y="117" class="lane" text-anchor="middle">정적 분석 레인 · 병렬</text>
+  <!-- Java -->
+  <rect x="86" y="128" width="160" height="100" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="166" cy="156" r="14" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(166,156)"><polyline points="-2,-5 -6,0 -2,5"/><polyline points="2,-5 6,0 2,5"/></g>
+  <text x="166" y="184" class="ttl" text-anchor="middle">Java 탐지 분석가</text>
+  <text x="166" y="202" class="sub" text-anchor="middle">jadx 정적분석</text>
+  <!-- Native -->
+  <rect x="254" y="128" width="160" height="100" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="334" cy="156" r="14" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(334,156)"><rect x="-6" y="-6" width="12" height="12" rx="1.5"/><line x1="-6" y1="-2" x2="-9" y2="-2"/><line x1="-6" y1="2" x2="-9" y2="2"/><line x1="6" y1="-2" x2="9" y2="-2"/><line x1="6" y1="2" x2="9" y2="2"/><line x1="-2" y1="-6" x2="-2" y2="-9"/><line x1="2" y1="-6" x2="2" y2="-9"/><line x1="-2" y1="6" x2="-2" y2="9"/><line x1="2" y1="6" x2="2" y2="9"/></g>
+  <text x="334" y="184" class="ttl" text-anchor="middle">Native 탐지 분석가</text>
+  <text x="334" y="202" class="sub" text-anchor="middle">Ghidra .so 리버싱</text>
+
+  <!-- ③ 리더 종합 -->
+  <rect x="100" y="268" width="300" height="56" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="126" cy="296" r="13" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(126,296)"><path d="M-7,-6 L7,-6 L2,0 L2,7 L-2,7 L-2,0 Z"/></g>
+  <text x="148" y="292" class="ttl">리더 종합</text>
+  <text x="148" y="308" class="sub">Java+Native 상관분석</text>
+
+  <!-- ④ 반대자 게이트 -->
+  <rect x="100" y="352" width="300" height="62" rx="10" fill="#fff8e6" stroke="#d4a72c" stroke-width="1.5"/>
+  <circle cx="126" cy="383" r="13" fill="#fdefc7" stroke="#b7791f" stroke-width="1.3"/>
+  <g class="ic" stroke="#b7791f" transform="translate(126,383)"><path d="M0,-8 L7,-5 L7,1 C7,5 3.5,7.5 0,8.5 C-3.5,7.5 -7,5 -7,1 L-7,-5 Z"/><polyline points="-3,0 -1,2.5 3.5,-2.5"/></g>
+  <text x="148" y="379" class="ttl">반대자 천장 게이트</text>
+  <text x="148" y="395" class="sub">부정 결론 비판적 검증</text>
+
+  <!-- ⑤ Frida -->
+  <rect x="100" y="446" width="300" height="56" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="126" cy="474" r="13" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(126,474)"><polyline points="-8,0 -3,0 -1,-6 1,6 3,0 8,0"/></g>
+  <text x="148" y="470" class="ttl">Frida 후킹 엔지니어</text>
+  <text x="148" y="486" class="sub">동적 검증 · 우회 실측</text>
+
+  <!-- ⑥ 리포트 -->
+  <rect x="100" y="530" width="300" height="56" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.4"/>
+  <circle cx="126" cy="558" r="13" fill="#e2e8f0" stroke="#475569" stroke-width="1.3"/>
+  <g class="ic" stroke="#475569" transform="translate(126,558)"><rect x="-6" y="-8" width="12" height="16" rx="1.5"/><line x1="-3" y1="-3" x2="3" y2="-3"/><line x1="-3" y1="0" x2="3" y2="0"/><line x1="-3" y1="3" x2="1" y2="3"/></g>
+  <text x="148" y="554" class="ttl">최종 리포트</text>
+  <text x="148" y="570" class="sub">실측 / 추정 명확히 구분</text>
+
+  <!-- 지식 베이스 -->
+  <rect x="486" y="352" width="190" height="96" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="6 5"/>
+  <circle cx="512" cy="392" r="13" fill="#eef2f6" stroke="#64748b" stroke-width="1.3"/>
+  <g class="ic" stroke="#64748b" transform="translate(512,392)"><path d="M-7,-5 C-7,-7.5 7,-7.5 7,-5 L7,5 C7,7.5 -7,7.5 -7,5 Z"/><path d="M-7,-5 C-7,-2.5 7,-2.5 7,-5"/></g>
+  <text x="534" y="388" class="ttl">지식 베이스</text>
+  <text x="534" y="405" class="sub">모든 단계가</text>
+  <text x="534" y="420" class="sub">참조 · 갱신</text>
+</svg>
+</div>
+
+<h3>2.1 병렬 분석 (Java ∥ Native)</h3>
+<p>Java 계층과 Native 계층은 상이한 도구·관점을 요구하므로 동시에 분석한다. Java 레인은 난독화된 디컴파일 결과에서
+   탐지·종료 funnel을 추적하고, Native 레인은 공용 라이브러리를 제외한 커스텀 .so의 JNI 진입점과 탐지 루틴을 리버싱한다.</p>
+<h3>2.2 리더 종합 (상관분석)</h3>
+<p>두 계층의 결과를 교차 검증한다. Java에서 식별된 탐지 콜백이 Native의 어느 함수로 연결되는지,
+   Native의 self-kill이 Java의 어느 핸들러를 경유하는지를 연결한다. 연결이 비는 경우 해당 분석가에게
+   구체적 공백을 되돌려 재분석을 지시하고 다시 취합한다.</p>
+<h3>2.3 동적 검증 (Frida)</h3>
+<p>정적 분석이 지목한 "의심 함수"는 가설이다. Frida 후킹으로 해당 함수의 실제 발동 여부와
+   반환값 조작에 따른 동작 변화를 런타임에서 확인한 것만 탐지 로직으로 인정한다.</p>
+<h3>2.4 반대자 천장 게이트</h3>
+<p>파이프라인의 안전장치로, 모든 부정 결론을 독립적으로 재검증한다. 상세는 3.5절.</p>
+
+<h2>3. 판단 규율 — 결론 게이트 다섯 원칙</h2>
+<p>본 체계의 핵심은 자동화가 아니라 규율이다. 반복 관찰된 오판 유형을 성문 체크리스트로 정리하여 모든 결론에 적용한다.</p>
+
+<h3>3.1 "불가/천장"은 결과가 아니라 가설이다</h3>
+<p>"userspace로는 불가", "커널에서만 차단" 등 부정 결론은 그 자체로 증명을 요한다. 확정 기록은 세 조건을
+   모두 충족할 때만 허용된다 &mdash; (1) 결정 코드의 화이트박스 판독(preimage), (2) userspace 개입 지점 부재 확인(소거 완전성),
+   (3) 도구 A/B를 통한 관측자 효과 배제. 미충족 시 결론은 "미규명"으로 격하한다.</p>
+<blockquote>사례(익명화). 어느 인증 솔루션 분석에서 프로세스가 반복 조기 종료되자 "커널 레벨 방어로 우회 불가"라고
+   3회 연속 단정하였다. 실제 원인은 계측 도구가 노출한 스레드 이름을 솔루션이 스캔하여 self-kill한 것이었고,
+   스레드 이름을 은닉하자 생존하였다. 커널은 관여하지 않았다.</blockquote>
+
+<h3>3.2 관측자 효과를 먼저 배제한다</h3>
+<p>크래시·조기 종료를 타깃 방어로 귀속하기 전에, 계측(Interceptor/훅)을 제거한 A/B를 선행한다.
+   공존이 목표인 경우 결정 지점까지는 순수 데이터 write(byte-patch)만 사용하여 훅의 부작용을 차단한다.
+   "훅을 걸자 종료되었다"는 훅 자체가 종료를 유발했을 가능성을 배제하기 전까지 증거가 아니다.</p>
+
+<h3>3.3 정적 경로의 존재는 런타임 사용을 의미하지 않는다</h3>
+<p>디컴파일 결과에 탐지·종료 로직이 보이더라도 실제 발동 여부는 별개다.
+   런타임 발동선(trigger)을 확인하기 전까지 "해당 탐지가 동작한다"고 단정하지 않는다.</p>
+
+<h3>3.4 긍정 결론도 동일하게 게이트한다 (양방향 규율)</h3>
+<p>부정 결론뿐 아니라 "서버가 검증한다", "해당 값은 미러이다", "X가 authoritative하다" 같은 긍정적 메커니즘 판정도
+   실측 없이 단정하지 않는다. 정적 코드 판독만으로 런타임 동작을 확정하는 것을 금지한다.</p>
+<blockquote>사례(익명화). 어느 게임의 전투값 분석에서 서버 동기화 핸들러의 코드상 존재를 근거로 "HP는 서버 권위 확정"이라 기록하였다.
+   그러나 런타임에서 해당 핸들러는 전투 중 0회 발동하였고, 클라이언트 저장값을 전 계층 조작해도 결과가 불변이었다.
+   "저장값 비권위"는 실측되었으나 "서버 권위"는 미확보이므로 결론을 "미규명"으로 하향하였다.
+   추적되는 값이 곧 권위 있는 값은 아니며, write A/B만이 증거가 된다.</blockquote>
+
+<h3>3.5 반대자가 모든 부정 결론에 서명한다</h3>
+<p>분석 주체는 자기 가설을 확증하는 경향이 있으므로, 파이프라인에 상설 반대자 역할을 두어 모든 "불가/천장" 결론을
+   공격적으로 재검증한다. 반대자는 preimage·소거완전성·도구 A/B·사전편향 체크리스트로 결론을 심사하고,
+   통과한 것만 "천장 카드"로 서명한다. 서명 없는 부정 결론은 리포트에 확정으로 기재하지 않는다.
+   작성과 검토는 항상 분리된 레인에서 수행되며, 분석 주체가 자기 결론을 자기가 승인하지 않는다.</p>
+
+<h2>4. 축적된 분석 지식의 재활용</h2>
+<p>분석 결과를 일회성 리포트로 소비하지 않고, <b>구조화된 지식 단위로 기록하여 다음 분석의 출발점으로 재사용</b>한다.
+   타깃마다 처음부터 재도출하지 않는 것이 본 체계가 시간이 지날수록 빨라지는 이유다.</p>
+<table>
+  <tr><th>유형</th><th>내용</th><th>예</th></tr>
+  <tr><td>타깃 기록</td><td>특정 앱/솔루션의 보호 구성·탐지 벡터·우회 경로</td><td>"A 앱: 종료 벡터 = 스레드명 스캔, 생존 조건 = 스레드명 은닉"</td></tr>
+  <tr><td>재사용 기법</td><td>타깃 비종속적 분석 기술</td><td>"자가삭제 모듈은 unlink 후킹으로 보존"</td></tr>
+  <tr><td>판단 교훈</td><td>과거 오판과 그 원인, 재발 방지 규칙</td><td>"조기 크래시를 커널로 단정 금지 → 계측 A/B 선행"</td></tr>
+  <tr><td>환경 gotcha</td><td>도구·플랫폼의 반복적 함정</td><td>특정 프레임워크 버전의 API 변경, 실행 환경 제약</td></tr>
+</table>
+<p><b>교차 타깃 전이.</b> 동일 계열 솔루션은 방어 메커니즘을 공유하는 경우가 많다. 한 타깃에서 <b>검증된</b> 사실은
+   동일 계열의 새 타깃에서 재검증 없이 <b>가설의 출발점</b>으로 활용된다. 단, 전이된 지식은 가설이지 사실이 아니다 &mdash;
+   새 타깃에서 반드시 재검증(발동선 A/B, 프로세스 맵 확인)을 거친다. 지식 재활용은 분석 속도를 높이되 판단 규율을 우회하지 않는다.</p>
+<p><b>재현성.</b> 휘발성 값(세션별 주소·PID 종속 포인터)이 아니라 재도출 절차와 불변 관계를 기록한다.
+   예컨대 특정 필드를 "주소 0x…"가 아니라 "엔티티 베이스 + 고정 오프셋, 재도출 레시피 X" 형태로 남겨,
+   다른 세션·빌드에서도 복원 가능하게 한다.</p>
+
+<h2>5. 적용 기술 사례 (비무기화)</h2>
+<p>규율과 자동화·지식 재활용을 결합한 결과 정리된 재사용 기법의 일부다. 방법 수준의 요약이며 구체 페이로드·오프셋은 생략한다.</p>
+<ul>
+  <li><b>자가삭제 모듈 복구.</b> 탐지 후 자신을 unlink하는 보안 모듈을 <code>/proc/[pid]/maps</code>의 삭제 흔적으로 식별한 뒤
+      <code>unlink</code> 후킹으로 삭제를 차단하여 메모리에서 보존하고 정적 분석으로 복원한다.
+      → <a href="cases/03-selfdelete/index.html">사례 보기</a></li>
+  <li><b>암호화된 탐지 함수의 런타임 복원.</b> JNI 진입점이 비어 보이는(실행 시 복호화되는) .so는
+      로드 시점의 메모리 덤프로 복호화된 코드를 추출하여 분석 가능 상태로 만든다.
+      → <a href="cases/02-aos/index.html">사례 보기</a></li>
+  <li><b>IL2CPP 전투값 역추적(값 기반).</b> 함수·필드명이 런타임에서도 암호화된 커스텀 IL2CPP 환경에서,
+      난독화되지 않는 데이터 값(HP·전투력)을 앵커로 값 스캔 → 변화 추적 → 소유 객체 그래프 climb으로 엔티티 구조를 복원한다.
+      조작 가능성·권위 소재는 3.4 규율에 따라 "미규명"까지 엄격히 구분해 기록한다.</li>
+  <li><b>다층 복호화 체인 역산(CTF).</b> 공인 CTF 환경에서 Java 난독화 → XOR 문자열 복호 → AES 에셋 복호 →
+      네이티브 .so → 최종 dex로 이어지는 다단계 보호를, 각 단계의 복호 루틴을 재구현하여 끝까지 역산한다.
+      → <a href="cases/04-htb-joker/index.html">사례 보기</a></li>
+</ul>
+
+<h2>6. 결과</h2>
+<ul>
+  <li><b>거짓 천장 감소.</b> "불가"로 단정되었다가 뒤집힌 사례들을 규율이 사전 차단하면서 부정 결론의 신뢰도가 향상된다.</li>
+  <li><b>"미규명"의 명시.</b> 증적 없는 결론을 "확정"으로 포장하지 않는다. 미규명은 실패가 아니라 정직한 경계 표시이며,
+      방어팀에 "추가 정밀 검증이 필요한 지점"을 정확히 지시한다.</li>
+  <li><b>분석 가속.</b> 지식 베이스의 누적으로 신규 타깃의 초기 정찰·오판 회피 비용이 지속적으로 감소한다.</li>
+  <li><b>재현 가능한 산출물.</b> 휘발성 값이 아닌 재도출 절차가 남아 세션·분석가 교체에도 결과가 보존된다.</li>
+</ul>
+
+<footer>
+  <p>모든 분석은 인가된 환경에서 수행 &middot; 상용 제품 구체 우회 수단은 책임있는 공개 원칙에 따라 비공개 &middot;
+     <a href="showcase.html">도구 쇼케이스</a> &middot; <a href="index.html">포트폴리오 홈</a></p>
+</footer>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<!-- MB_BYPASS 쇼케이스 — 도구 설계·인터페이스·데이터 모델. 비배포(소스 미포함). -->
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MB_BYPASS — 쇼케이스</title>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2328;--sub:#57606a;--line:#d8dee4;
+    --accent:#2f5bd0;--green:#2e7d32;--codebg:#1b1f24;--codeink:#e6edf3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:900px;margin:0 auto;padding:30px 20px 80px}
+  a{color:var(--accent)}
+  .back{font-size:13px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin:10px 0 18px}
+  header.top h1{margin:6px 0 6px;font-size:26px;letter-spacing:-.3px}
+  header.top .lede{color:var(--sub);font-size:14px}
+  .notice{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:11px 15px;font-size:12.5px;color:#6b5300;margin:16px 0}
+  h2{font-size:19px;margin:34px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  p{margin:9px 0} .muted{color:var(--sub)}
+  code{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;background:#eceff3;border-radius:4px;padding:1px 5px}
+  pre{background:var(--codebg);color:var(--codeink);border-radius:8px;padding:14px 16px;overflow-x:auto;
+    font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;line-height:1.55;margin:10px 0}
+  pre .c{color:#8b949e} pre .k{color:#79c0ff} pre .g{color:#7ee787} pre .s{color:#a5d6ff}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#eef1f5;font-weight:600}
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 18px;margin:16px 0;text-align:center;overflow-x:auto}
+  ul{margin:8px 0 8px 2px;padding-left:22px} li{margin:5px 0}
+  footer{margin-top:46px;border-top:1px solid var(--line);padding-top:16px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back"><a href="index.html">&larr; 포트폴리오 홈</a></p>
+
+<header class="top">
+  <h1>MB_BYPASS</h1>
+  <p class="lede">인가된 모바일 보안 평가를 위한 멀티에이전트 리버싱 자동화 CLI.
+     Java(jadx) + Native(.so, Ghidra) 탐지 로직을 병렬 분석하고, Frida 후킹으로 런타임 검증하며,
+     실측과 추정을 구분한 평가 리포트를 생성한다.</p>
+</header>
+
+<div class="notice">
+  <b>비공개·비배포 프로젝트.</b> 본 도구는 상용·금융 앱에 대한 동작하는 우회 코드를 포함하므로 소스를 배포하지 않는다.
+  이 페이지는 도구의 <b>설계·인터페이스·방법론</b>만 공개한다. 코드 열람·라이브 데모는 인가된 평가 맥락 또는 면접 시 제공한다.
+  → <a href="notice.html">윤리·인가 고지</a>
+</div>
+
+<h2>무엇을 하는가</h2>
+<p>모바일 보안 솔루션 분석의 전체 워크플로를 하나의 CLI로 구동한다.</p>
+<pre>① recon      보호 표면 매핑      네이티브 .so + Java를 시그니처 DB와 대조, 실행 중 로드 .so 열거
+② analyze    탐지 로직 분석      Java(jadx) ∥ Native(Ghidra) 병렬, FindingSet JSON 산출
+③ hook       동적 검증·우회      findings → Frida 후킹 생성 → attach → 실발동 확인
+④ report     평가 리포트         결과 집계, 실측/추정 구분 표기 (md + 자체완결 html)</pre>
+<p>핵심 설계 원칙은 "뚫었다/못 뚫었다"가 아니라 <b>결론의 정확도</b>다.
+   정적 코드에 경로가 있다는 것과 런타임에 그 경로가 실제로 쓰인다는 것을 구분하며,
+   증적 없는 판정은 "미규명"으로 남긴다. 이 규율은 설명이 아니라 <b>데이터 모델에 강제</b>되어 있다(아래 참조).</p>
+
+<h2>아키텍처</h2>
+<div class="diagram">
+<svg viewBox="0 0 720 610" width="100%" style="max-width:720px;height:auto" role="img"
+     aria-label="멀티에이전트 분석 하네스 파이프라인 — 입력에서 병렬 정적분석, 리더 종합, 반대자 게이트, Frida 동적검증, 리포트까지. 지식 베이스가 각 단계에 참조·갱신된다." xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .diagram text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+    .ttl{font-weight:700;font-size:14px;fill:#1f2328}
+    .sub{font-size:11.5px;fill:#57606a}
+    .lane{font-weight:700;font-size:12px;fill:#2f5bd0;letter-spacing:.2px}
+    .elab{font-size:11.5px;font-weight:600;fill:#b7791f}
+    .pass{font-size:11.5px;font-weight:600;fill:#2e7d32}
+    .ic{fill:none;stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#475569"/></marker>
+    <marker id="ara" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,6 Z" fill="#b7791f"/></marker>
+    <marker id="arg" markerWidth="8" markerHeight="8" refX="6" refY="2.6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L6,2.6 L0,5.2 Z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <!-- 연결선 (노드보다 먼저 그려 뒤에 깔리게) -->
+  <g fill="none">
+    <!-- 메인 흐름 (실선) -->
+    <path d="M250,68 V92" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M166,228 C166,250 250,250 250,266" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M334,228 C334,250 250,250 250,266" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,324 V350" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,414 V446" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <path d="M250,504 V530" stroke="#475569" stroke-width="1.6" marker-end="url(#ar)"/>
+    <!-- 반려 피드백 (점선 앰버) -->
+    <path d="M100,388 C52,388 52,300 100,300" stroke="#b7791f" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ara)"/>
+    <!-- 지식 베이스 참조 (점선 그레이) -->
+    <path d="M486,388 C440,380 430,300 400,298" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+    <path d="M486,400 L404,386" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+    <path d="M486,414 C440,430 430,470 404,474" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arg)"/>
+  </g>
+
+  <!-- 엣지 라벨 -->
+  <text transform="translate(44,360) rotate(-90)" class="elab" text-anchor="middle">반려 · 미규명 격하</text>
+  <text x="262" y="434" class="pass">서명 통과</text>
+
+  <!-- ① 입력 -->
+  <rect x="100" y="20" width="300" height="48" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.4"/>
+  <circle cx="126" cy="44" r="13" fill="#e2e8f0" stroke="#475569" stroke-width="1.3"/>
+  <g class="ic" stroke="#475569" transform="translate(126,44)"><rect x="-5" y="-8" width="10" height="16" rx="2"/><line x1="-2" y1="5" x2="2" y2="5"/></g>
+  <text x="148" y="49" class="ttl">분석 대상 앱 &#8201;<tspan class="sub">(입력)</tspan></text>
+
+  <!-- 병렬 정적 분석 레인 -->
+  <rect x="66" y="96" width="368" height="150" rx="12" fill="#fbfcfe" stroke="#c9d6ef" stroke-width="1.3" stroke-dasharray="6 5"/>
+  <text x="250" y="117" class="lane" text-anchor="middle">정적 분석 레인 · 병렬</text>
+  <!-- Java -->
+  <rect x="86" y="128" width="160" height="100" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="166" cy="156" r="14" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(166,156)"><polyline points="-2,-5 -6,0 -2,5"/><polyline points="2,-5 6,0 2,5"/></g>
+  <text x="166" y="184" class="ttl" text-anchor="middle">Java 탐지 분석가</text>
+  <text x="166" y="202" class="sub" text-anchor="middle">jadx 정적분석</text>
+  <!-- Native -->
+  <rect x="254" y="128" width="160" height="100" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="334" cy="156" r="14" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(334,156)"><rect x="-6" y="-6" width="12" height="12" rx="1.5"/><line x1="-6" y1="-2" x2="-9" y2="-2"/><line x1="-6" y1="2" x2="-9" y2="2"/><line x1="6" y1="-2" x2="9" y2="-2"/><line x1="6" y1="2" x2="9" y2="2"/><line x1="-2" y1="-6" x2="-2" y2="-9"/><line x1="2" y1="-6" x2="2" y2="-9"/><line x1="-2" y1="6" x2="-2" y2="9"/><line x1="2" y1="6" x2="2" y2="9"/></g>
+  <text x="334" y="184" class="ttl" text-anchor="middle">Native 탐지 분석가</text>
+  <text x="334" y="202" class="sub" text-anchor="middle">Ghidra .so 리버싱</text>
+
+  <!-- ③ 리더 종합 -->
+  <rect x="100" y="268" width="300" height="56" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="126" cy="296" r="13" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(126,296)"><path d="M-7,-6 L7,-6 L2,0 L2,7 L-2,7 L-2,0 Z"/></g>
+  <text x="148" y="292" class="ttl">리더 종합</text>
+  <text x="148" y="308" class="sub">Java+Native 상관분석</text>
+
+  <!-- ④ 반대자 게이트 -->
+  <rect x="100" y="352" width="300" height="62" rx="10" fill="#fff8e6" stroke="#d4a72c" stroke-width="1.5"/>
+  <circle cx="126" cy="383" r="13" fill="#fdefc7" stroke="#b7791f" stroke-width="1.3"/>
+  <g class="ic" stroke="#b7791f" transform="translate(126,383)"><path d="M0,-8 L7,-5 L7,1 C7,5 3.5,7.5 0,8.5 C-3.5,7.5 -7,5 -7,1 L-7,-5 Z"/><polyline points="-3,0 -1,2.5 3.5,-2.5"/></g>
+  <text x="148" y="379" class="ttl">반대자 천장 게이트</text>
+  <text x="148" y="395" class="sub">부정 결론 비판적 검증</text>
+
+  <!-- ⑤ Frida -->
+  <rect x="100" y="446" width="300" height="56" rx="10" fill="#eef3fe" stroke="#2f5bd0" stroke-width="1.4"/>
+  <circle cx="126" cy="474" r="13" fill="#dfeaff" stroke="#2f5bd0" stroke-width="1.3"/>
+  <g class="ic" stroke="#2f5bd0" transform="translate(126,474)"><polyline points="-8,0 -3,0 -1,-6 1,6 3,0 8,0"/></g>
+  <text x="148" y="470" class="ttl">Frida 후킹 엔지니어</text>
+  <text x="148" y="486" class="sub">동적 검증 · 우회 실측</text>
+
+  <!-- ⑥ 리포트 -->
+  <rect x="100" y="530" width="300" height="56" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.4"/>
+  <circle cx="126" cy="558" r="13" fill="#e2e8f0" stroke="#475569" stroke-width="1.3"/>
+  <g class="ic" stroke="#475569" transform="translate(126,558)"><rect x="-6" y="-8" width="12" height="16" rx="1.5"/><line x1="-3" y1="-3" x2="3" y2="-3"/><line x1="-3" y1="0" x2="3" y2="0"/><line x1="-3" y1="3" x2="1" y2="3"/></g>
+  <text x="148" y="554" class="ttl">최종 리포트</text>
+  <text x="148" y="570" class="sub">실측 / 추정 명확히 구분</text>
+
+  <!-- 지식 베이스 -->
+  <rect x="486" y="352" width="190" height="96" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="6 5"/>
+  <circle cx="512" cy="392" r="13" fill="#eef2f6" stroke="#64748b" stroke-width="1.3"/>
+  <g class="ic" stroke="#64748b" transform="translate(512,392)"><path d="M-7,-5 C-7,-7.5 7,-7.5 7,-5 L7,5 C7,7.5 -7,7.5 -7,5 Z"/><path d="M-7,-5 C-7,-2.5 7,-2.5 7,-5"/></g>
+  <text x="534" y="388" class="ttl">지식 베이스</text>
+  <text x="534" y="405" class="sub">모든 단계가</text>
+  <text x="534" y="420" class="sub">참조 · 갱신</text>
+</svg>
+</div>
+<p>5개 전용 에이전트(<code>java-detection-analyst</code>, <code>native-detection-analyst</code>,
+   <code>frida-hook-engineer</code>, <code>bypass-report-writer</code>, <code>adversarial-reviewer</code>)가
+   역할을 분담하며, 반대자 에이전트가 모든 부정 결론을 게이트한다.</p>
+
+<h2>실제 인터페이스</h2>
+<pre><span class="c">$ mb-bypass --help</span>
+Authorized Android security-solution bypass analysis toolkit.
+
+  <span class="k">recon</span>      보호 표면을 먼저 매핑 (native .so + Java vs 시그니처 DB)
+  <span class="k">analyze</span>    java | native  탐지 로직 정적/네이티브 분석
+  <span class="k">hook</span>       gen | run      Frida 후킹 생성 및 실행
+  <span class="k">report</span>     결과 집계 → 리포트 (--html)
+  <span class="k">results</span>    sync | path    결과 마스터 영속화 헬퍼
+
+<span class="c">$ mb-bypass recon   --package &lt;pkg&gt; --live</span>
+<span class="c">$ mb-bypass analyze java   target/&lt;pkg&gt;/jadx_out      --engine mcp</span>
+<span class="c">$ mb-bypass analyze native target/&lt;pkg&gt;/lib/libX.so   --engine mcp</span>
+<span class="c">$ mb-bypass hook gen  results/&lt;pkg&gt;/native_findings.json</span>
+<span class="c">$ mb-bypass hook run  results/&lt;pkg&gt;/generated/hook.js -t &lt;pkg&gt; --spawn</span>
+<span class="c">$ mb-bypass report   --html</span></pre>
+<p>결과는 타깃별로 <code>results/&lt;package&gt;/</code>에 격리되어, 여러 앱을 동시에 다뤄도 findings가 섞이지 않는다.</p>
+
+<h2>산출물 — FindingSet (판단 규율이 박힌 데이터 모델)</h2>
+<p>각 분석 단계는 구조화된 <code>FindingSet</code> JSON을 주고받는다. 아래는 스키마 예시(값은 비실명).</p>
+<pre>{
+  <span class="s">"source"</span>: <span class="s">"native:libexample.so"</span>,
+  <span class="s">"findings"</span>: [
+    {
+      <span class="s">"id"</span>: <span class="s">"nat-001"</span>,
+      <span class="s">"layer"</span>: <span class="s">"native"</span>,
+      <span class="s">"location"</span>: <span class="s">"libexample.so!0xXXXXX (JNI_OnLoad)"</span>,
+      <span class="s">"category"</span>: <span class="s">"frida-detection"</span>,
+      <span class="s">"evidence"</span>: <span class="s">"thread-name scan over /proc/self/task/*/comm"</span>,
+      <span class="s">"confidence"</span>: 0.9,
+      <span class="s">"status"</span>: <span class="g">"bypassed"</span>,
+      <span class="s">"hook_target"</span>: { <span class="s">"module"</span>: <span class="s">"libexample.so"</span>, <span class="s">"symbol"</span>: <span class="s">"&lt;resolved&gt;"</span> }
+    }
+  ]
+}</pre>
+<p>주목할 것은 <code>status</code> 필드의 상태값이다 &mdash; 이것이 방법론을 <b>코드로 강제</b>한다.</p>
+<table>
+  <tr><th>status</th><th>의미</th></tr>
+  <tr><td><code>untested</code></td><td>발견했으나 후킹 미실행</td></tr>
+  <tr><td><code>confirmed</code></td><td>정적/동적 분석으로 탐지 로직 확인</td></tr>
+  <tr><td><code>hooked</code></td><td>Frida 후킹이 <b>실제 발동</b> → 탐지 로직 확정</td></tr>
+  <tr><td><code>not_hooked</code></td><td>후킹 걸었으나 발동 안 함</td></tr>
+  <tr><td><b><code>not_observed</code></b></td><td><b>정적으론 확인됐으나 관측 창에서 런타임 미발동</b> (static ≠ runtime)</td></tr>
+  <tr><td><code>bypassed</code></td><td>후킹으로 탐지 무력화 성공</td></tr>
+</table>
+<p><code>not_observed</code>의 존재가 핵심이다. "코드에 탐지 로직이 있다"와 "그 로직이 실제로 돈다"를
+   <b>데이터 모델 레벨에서 분리</b>하여, 정적 경로의 존재를 런타임 사실로 오인하지 못하게 한다.</p>
+
+<h2>기술 스택</h2>
+<ul>
+  <li><b>언어/런타임</b> &mdash; Python 3.10+ (CLI 오케스트레이션), JavaScript (Frida 에이전트)</li>
+  <li><b>동적 계측</b> &mdash; Frida 17.x (florida 원격 서버 1순위 / ZygiskFrida 로드타임 gadget 2순위)</li>
+  <li><b>정적 분석</b> &mdash; jadx (Java), Ghidra (Native .so) &mdash; 각각 MCP API로 분석 에이전트가 직접 구동</li>
+  <li><b>오케스트레이션</b> &mdash; 5-에이전트 하이브리드 파이프라인 (병렬 분석 / 리더 종합 / 반대자 게이트 / 순차 후킹·리포트)</li>
+  <li><b>산출물</b> &mdash; <code>FindingSet</code> JSON으로 단계 간 결합, 마크다운 + 자체완결 HTML 리포트</li>
+</ul>
+
+<h2>규모</h2>
+<ul>
+  <li><b>20+</b> 안드로이드 실앱 인가 분석 (상용 게임 · 금융 · RASP 적용 앱) + 공인 CTF 다수</li>
+  <li><b>5</b> 전용 분석 에이전트 + 1 상설 반대자</li>
+  <li>다수 타깃 비종속 재사용 기법 + 판단 교훈을 구조화된 지식 베이스로 누적</li>
+  <li>상용 안티치트(ACE 계열)·상용 RASP(금융권)·Unity IL2CPP 난독화 등 <b>고난도 보호 환경</b> 포함</li>
+</ul>
+
+<h2>상태</h2>
+<ul>
+  <li><b>비공개 · 인가 전용 · 비배포.</b> 소스·바이너리를 배포하지 않는다.</li>
+  <li>핵심 파이프라인(recon→analyze→hook→report) 동작, 다수 실 타깃에 적용 완료.</li>
+  <li>일부 고난도 타깃은 분석 진행 중이며, 미규명 항목을 정직하게 표기한다.</li>
+</ul>
+
+<footer>
+  <p>설계·방법론만 공개 &middot; 소스 비배포 &middot; <a href="methodology.html">방법론</a> &middot; <a href="index.html">포트폴리오 홈</a></p>
+</footer>
+
+</div>
+</body>
+</html>
