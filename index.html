@@ -68,6 +68,10 @@
   /* 5원칙 */
   .pill{display:inline-block;background:#e8f0fe;color:#1a56c4;border-radius:12px;
     padding:3px 10px;font-size:12.5px;margin:4px 6px 4px 0}
+  /* 용어 설명 박스 */
+  .terms{background:#f3f6fb;border:1px solid #dbe3ef;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:13px;color:var(--sub)}
+  .terms p{margin:5px 0}
+  .terms b{color:var(--ink)}
 
   /* 카드 그리드 */
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:16px 0}
@@ -106,6 +110,7 @@
     <a class="sub" href="cases/04-htb-joker/index.html">HTB Joker</a>
     <a class="sub" href="cases/02-aos/index.html">결제 취약점 (인가)</a>
     <a class="sub" href="cases/03-selfdelete/index.html">자가삭제 복구</a>
+    <a class="sub" href="cases/05-game-combat/index.html">게임 전투 분석 비교</a>
     <a class="top" href="#s-scale">규모</a>
     <a class="top" href="notice.html">윤리·인가 고지</a>
   </nav>
@@ -126,8 +131,15 @@
 
 <!-- ===================== 1. 주인공 상세 ===================== -->
 <h2 id="s-mbbypass">MB_BYPASS <span class="sub">도구 · 방법론 · 판단 규율</span></h2>
-<p class="muted">상용 RASP·안티치트 분석에서 산출물의 가치는 "뚫었다/못 뚫었다"가 아니라 <b>결론의 정확도</b>다.
-   정적 경로의 존재와 런타임 실발동을 분리하고, 증적 없는 판정은 "미규명"으로 남긴다.</p>
+<p class="muted">상용 RASP·안티치트 분석의 목적은 "뚫었다/못 뚫었다"가 아니라, 실제로 악용 가능한 약점을 <b>정확히 가려내 방어 개선의 근거로 잇는 것</b>이다.
+   정적 경로의 존재와 런타임 실발동을 분리하고, 실측 없는 판정은 "미규명"으로 남긴다.</p>
+
+<div class="terms">
+  <p><b>RASP</b> (Runtime Application Self-Protection) &mdash; 앱 내부에 통합되어 런타임(실행) 중 루팅·후킹 등 보안 위협을 실시간으로 탐지·차단하는 상용 보안 솔루션.</p>
+  <p><b>안티치트</b> &mdash; 게임 클라이언트의 메모리 변조·치팅을 탐지·차단하는 보호. RASP와 기법이 대부분 겹친다(예: ACE·NMSS).</p>
+  <p><b>후킹 / Frida</b> &mdash; 실행 중인 앱의 함수를 가로채 동작을 관찰·변경하는 동적 분석 기법과 대표 도구.</p>
+  <p><b>IL2CPP</b> &mdash; Unity 게임을 C++ 네이티브로 변환해 컴파일하는 빌드 방식. 코드가 기계어가 되어 정적 분석 난도가 크게 오른다.</p>
+</div>
 
 <div class="pipe">
   <div class="step"><b>입력</b><span>대상 앱</span></div>
@@ -200,6 +212,13 @@
     <h3>자가삭제 보안모듈 복구</h3>
     <p class="role">§ unlink 후킹으로 자가삭제 모듈 보존 → 정적 분석 (재사용 기법)</p>
     <a class="btn" href="cases/03-selfdelete/index.html">사례 보기</a>
+  </div>
+
+  <div class="card">
+    <span class="tag ctf">엔진 비교 · 방어 연구</span>
+    <h3>게임 전투 분석 비교</h3>
+    <p class="role">§ Unreal(명조·STAR DIVE)·Unity(원신·나혼렙) 전투값 권위 비교 + 개선방안</p>
+    <a class="btn" href="cases/05-game-combat/index.html">비교 보기</a>
   </div>
 
 </div>
