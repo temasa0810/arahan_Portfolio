@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!-- 사례: 자작 데모(MBGuard-Demo-L3) 네이티브 코드 패킹 — 로드시 인메모리 복호 → 복호 순간 덤프로 복원. 완전공개(자작). -->
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>네이티브 코드 패킹 — 자작 데모 언패킹</title>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2328;--sub:#57606a;--line:#d8dee4;
+    --accent:#2f5bd0;--red:#c62828;--green:#2e7d32;--amber:#9a6700;--codebg:#1b1f24;--codeink:#e6edf3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:960px;margin:0 auto;padding:30px 20px 80px}
+  a{color:var(--accent)}
+  .back{font-size:13px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin:10px 0 18px}
+  header.top h1{margin:6px 0 6px;font-size:25px;letter-spacing:-.3px}
+  header.top .meta{color:var(--sub);font-size:13px}
+  .banner{background:#eef3fe;border:1px solid #cdddfb;border-radius:8px;padding:12px 16px;font-size:13.5px;margin:16px 0}
+  .safe{background:#f3f9f4;border:1px solid #bfe3c4;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#1e6b26;margin:14px 0}
+  h2{font-size:20px;margin:36px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h3{font-size:15.5px;margin:22px 0 7px}
+  p{margin:9px 0}
+  .muted{color:var(--sub)}
+  code{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;background:#eceff3;border-radius:4px;padding:1px 5px}
+  pre{background:var(--codebg);color:var(--codeink);border-radius:8px;padding:14px 16px;overflow-x:auto;
+    font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;line-height:1.55}
+  pre .c{color:#9aa7b4}
+  pre .g{color:#7ee787}
+  pre .y{color:#e3b341}
+  table.cmp{border-collapse:collapse;width:100%;margin:14px 0;font-size:13px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:9px 11px;vertical-align:top;text-align:left}
+  table.cmp thead th{background:#eef1f5;font-weight:600}
+  table.cmp th.step{background:#f6f7f9;width:70px;font-weight:600;color:var(--sub);white-space:nowrap}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:12.5px}
+  .flow .b{background:#fff;border:1px solid var(--line);border-radius:7px;padding:7px 11px}
+  .flow .b b{display:block;font-size:12.5px}
+  .flow .b span{color:var(--sub);font-size:11px}
+  .flow .ar{color:var(--accent);font-weight:700}
+  .flow .b.key{border-color:#f0c9c9;background:#fdf3f3}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:10px;margin-right:3px;vertical-align:middle}
+  .tag.ok{background:#e7f4e8;color:#1e6b26}
+  .lesson{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13.5px;color:#6b5300}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--sub);font-size:12px}
+  @media(max-width:680px){.flow{font-size:11.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="back"><a href="../../index.html">&larr; 포트폴리오 홈</a></p>
+
+<header class="top">
+  <h1>네이티브 코드 패킹 &mdash; 자작 데모 언패킹·덤프</h1>
+  <div class="meta">직접 만든 데모(MBGuard-Demo-L3)의 네이티브 모듈을 암호화해 로드 순간에만 복호되게 하고 &mdash; 그 순간을 덤프해 원본을 복원하고(공격), 로더를 하드닝해 다시 막는(방어) 공방을 실측으로 보인다 &middot; 완전공개 &middot; 재현 가능</div>
+</header>
+
+<div class="safe">
+  <b>완전공개 &middot; 자작 데모.</b> 본 사례의 앱·네이티브 모듈·빌드·덤프 스크립트는 전부 직접 작성했다. 상용 제품이 아니며, 암호 키는 <b>일부러 바이너리에 내장</b>해 "패킹이 보안 경계가 아님"을 보이는 교육 목적이다. 공격 대상이 자작물이라 마스킹이 필요 없다.
+</div>
+
+<div class="banner">
+  <b>왜 패킹인가.</b> 안티치트·RASP 분석의 첫 관문은 <b>코드를 읽는 것</b>이다. 그래서 상용 보호는 네이티브 로직을 암호화해 디스크 바이너리에서 읽히지 않게 하고, 실행 직전에만 메모리에서 복호한다(패킹/언패킹). 이 데모는 그 구조를 최소 재현하고, <b>실제 분석에서 쓰는 "복호 순간 덤프"</b>로 복원해 보인다. 상용 사례(암호화 JNI 런타임 복원)의 안전한 자작 버전이다. &rarr; <a href="../02-aos/index.html">관련: 상용 앱 암호화 JNI 복원</a>
+</div>
+
+<h2>난이도 단계 &mdash; 무엇을 암호화하는가</h2>
+<table class="cmp">
+  <thead><tr><th class="step">레벨</th><th>보호</th><th>정적 분석에서 보이는 것</th></tr></thead>
+  <tbody>
+    <tr><th class="step">L1</th><td>무방비</td><td>문자열·로직 전부 평문 &mdash; <code>strings</code>·디스어셈블로 즉시 읽힘.</td></tr>
+    <tr><th class="step">L2</th><td>문자열 XOR 암호화 + 심볼 스트립</td><td>탐지 문자열·내부 함수명은 가려지나, <b>로직(명령어)은 디스어셈블로 그대로 보임</b>.</td></tr>
+    <tr><th class="step"><b>L3</b></th><td><b>로직 자체 암호화(패킹)</b></td><td>디스크 바이너리엔 <b>암호문만</b>. 로직은 로드 순간 메모리에서만 복호 &rarr; 정적 분석 불가, <b>런타임 덤프 필요</b>.</td></tr>
+  </tbody>
+</table>
+
+<h2>L3 설계 &mdash; 2차 ELF 인메모리 로드</h2>
+<div class="flow">
+  <div class="b"><b>로더 .so</b><span>평문·유일 탑재</span></div>
+  <div class="ar">&rarr;</div>
+  <div class="b"><b>암호화 에셋</b><span>libmbguard_lv2.so.enc (ChaCha20)</span></div>
+  <div class="ar">&rarr;</div>
+  <div class="b key"><b>복호</b><span>메모리 버퍼 = 평문 ELF</span></div>
+  <div class="ar">&rarr;</div>
+  <div class="b"><b>memfd_create</b><span>디스크 미기록</span></div>
+  <div class="ar">&rarr;</div>
+  <div class="b"><b>android_dlopen_ext</b><span>fd에서 로드</span></div>
+  <div class="ar">&rarr;</div>
+  <div class="b"><b>내부 모듈 실행</b><span>탐지 워처 가동</span></div>
+</div>
+<p class="muted">진짜 탐지 로직(루팅/Frida 12종)은 별도 모듈 <code>libmbguard_lv2.so</code>로 빌드한 뒤 <b>ChaCha20으로 암호화</b>해 에셋으로만 넣는다. APK의 네이티브 lib에는 <b>얇은 로더만</b> 들어간다. 로더는 실행 시 에셋을 복호해 <b>디스크를 거치지 않고(memfd)</b> 메모리에서 바로 로드한다. JNI 심볼은 로더가 소유하고, 내부 모듈의 C 함수로 위임한다(수동 로드 모듈의 JNI 미등록 문제 회피).</p>
+
+<h2>① 정적 관점 &mdash; 디스크엔 암호문만</h2>
+<p>빌드된 APK를 열면 네이티브 lib에는 로더만 있고, 내부 모듈은 <b>암호화 에셋</b>으로만 존재한다(평문 ELF 아님).</p>
+<pre><span class="c"># APK 내부(unzip -l) — lib/ 와 assets/</span>
+lib/arm64-v8a/<span class="g">libmbguard_loader.so</span>    12760   <span class="c">← 평문 로더(유일 탑재)</span>
+assets/<span class="y">libmbguard_lv2.so.enc</span>         46040   <span class="c">← 암호화된 내부 로직</span>
+<span class="c"># 내부 모듈 평문(libmbguard_lv2.so)은 APK에 없음(packaging 제외)</span>
+
+<span class="c"># 암호화 에셋 첫 4바이트</span>
+1a 8a e9 c8     <span class="c">← ELF 매직(7f 45 4c 46) 아님 = 디스어셈블 불가</span></pre>
+
+<h2>② 런타임 &mdash; 로드 순간 메모리에서 복호</h2>
+<p>앱 실행 시 로더가 에셋을 복호해 메모리에서 내부 모듈을 올린다. 실기기(arm64, 루팅) logcat.</p>
+<pre><span class="c"># 앱 실행 직후 logcat (MBGuard 태그)</span>
+I MBGuard: inner module decrypted in memory (46040 bytes), <span class="g">ELF magic OK</span>
+I MBGuard: MBGuard-L3 inner module started (unpacked in memory)
+I MBGuard: <span class="g">L3 loader ready — inner watcher running (unpacked)</span>
+W MBGuard: DETECT [8] su      <span class="c">← 복원된 내부 로직이 실제로 구동(루팅 탐지)</span>
+W MBGuard: DETECT [9] magisk
+W MBGuard: DETECT [11] mount</pre>
+<p class="muted"><code>memfd_create</code> + <code>android_dlopen_ext(library_fd)</code>로 디스크를 거치지 않고 로드했다(실기기에서 성공, 파일 fallback 불필요).</p>
+
+<h2>③ 공격(1라운드) &mdash; 복호 순간 덤프로 복원</h2>
+<p class="muted">아래는 <b>자기방어가 없는 로더</b> 기준이다(다음 ④에서 하드닝한다).</p>
+<p>정적으로 안 읽히면, <b>복호가 끝나 평문이 메모리에 존재하는 바로 그 순간</b>을 잡는다. 로더가 평문 ELF를 memfd에 기록하는 <code>write()</code> 호출을 Frida로 후킹해 통째로 덤프한다.</p>
+<pre><span class="c">// dump_lv2.js — write(fd, buf, len)에서 ELF 매직이면 buf 전체 덤프</span>
+Interceptor.attach(Module.getGlobalExportByName("write"), {
+  onEnter(args) {
+    const len = args[2].toInt32();
+    const b = new Uint8Array(args[1].readByteArray(4));
+    if (b[0]===0x7f && b[1]===0x45 && b[2]===0x4c && b[3]===0x46)  <span class="c">// \x7fELF</span>
+      new File(OUT,"wb").write(args[1].readByteArray(len));        <span class="c">// 평문 ELF 저장</span>
+  }
+});</pre>
+<pre><span class="c"># 실행 결과 (florida -H 로 spawn)</span>
+[dump] <span class="g">평문 ELF 포착(write→memfd): 46040 bytes</span>
+[dump] 저장: /data/.../files/dumped_libmbguard_lv2.so
+
+<span class="c"># 덤프 == 원본 모듈 검증</span>
+덤프 .so   SHA256 : b99a67ee…50151899
+원본 inner SHA256 : b99a67ee…50151899
+<span class="g">바이트 일치: True</span>   <span class="c">+ mbg_start/mbg_statuses/mbg_coins 심볼 존재 = Ghidra 분석 가능</span></pre>
+<p><span class="tag ok">확정</span> 덤프한 <code>.so</code>가 원본 내부 모듈과 <b>SHA-256 바이트 단위로 완전 일치</b> &mdash; 암호화된 모듈을 로드 순간에 떠서 <b>분석 가능한 원본 그대로 복원</b>했다.</p>
+
+<h2>④ 방어(2라운드) &mdash; 로더 하드닝으로 덤프 차단</h2>
+<p>로더가 평문 스텁이면 위처럼 쉽게 뚫린다(Ghidra에서 키·에셋명·언패킹 흐름이 그대로 보임). 그래서 로더 자체에 자기방어를 넣었다 &mdash; 상용 패커가 하는 세 가지.</p>
+<table class="cmp">
+  <thead><tr><th class="step">방어</th><th>내용</th><th>효과(Ghidra/런타임)</th></tr></thead>
+  <tbody>
+    <tr><th class="step">심볼 스트립 + visibility hidden</th><td><code>-s -fvisibility=hidden</code></td><td>.dynsym에 <b>JNI 3개만</b> 노출, 내부·anti-debug 함수 전부 은닉</td></tr>
+    <tr><th class="step">문자열 난독화 + 로그 제거</th><td>키·논스·에셋명·<code>TracerPid:</code>·dlsym 이름·<code>/proc</code> 경로 XOR 난독, 로그 메시지 전면 삭제</td><td>동작을 알려주는 <b>평문 문자열 0건</b>(남는 건 필수 JNI 심볼뿐)</td></tr>
+    <tr><th class="step">init_array anti-debug</th><td>로드 시점 생성자에서 TracerPid·maps·<b>스레드명(comm) 스캔</b> → 감지 시 <b>복호 키 오염</b></td><td>디버거/Frida 존재 시 복호가 비-ELF로 실패(anti-dump)</td></tr>
+  </tbody>
+</table>
+<pre><span class="c"># 하드닝 로더 정적 검사</span>
+llvm-strings libmbguard_loader.so | grep -E 'key|TracerPid|frida|mbg_|/proc'  <span class="g">→ 0건</span>
+llvm-nm -D libmbguard_loader.so
+  Java_..._nativeInit / getStatuses / getCoins          <span class="c">← 노출 심볼 = JNI 3개뿐</span>
+
+<span class="c"># 동일한 Frida 덤프를 하드닝 로더에 재시도</span>
+[dump] write() 후킹 설치 — 대기 중…
+(내부 모듈 구동 로그 없음)       <span class="y">← init_array가 Frida 포착 → 키 오염 → 복호 비-ELF</span>
+덤프 파일: <span class="y">ABSENT</span>            <span class="c">← 평문 ELF가 메모리에 생성되지 않음 → 덤프 불가</span></pre>
+<p class="muted">★핵심: florida는 <b>파일 경로 없는 익명 주입</b>이라 maps의 "frida" 경로·<code>TracerPid</code>(스폰 후 0) 검사를 회피한다. 1차 방어(경로·TracerPid)는 실패했고, <b>스레드명(<code>gum-js</code> 등) 스캔</b>을 추가하자 비로소 포착됐다 &mdash; 방어도 실측으로 검증해야 함을 보여준다.</p>
+
+<div class="lesson">
+  <b>교훈 &mdash; 공방은 라운드로 이어진다.</b> 패킹만으론 <b>복호 순간 덤프</b>에 뚫린다(1라운드). 로더에 스트립·난독화·init_array anti-debug를 더하면 naive 덤프는 막힌다(2라운드). 그러나 이것도 <b>결정적 경계가 아니다</b> &mdash; init_array 방어선을 먼저 무력화(스레드명 스푸핑·thread-hide·스캔 후킹)하면 덤프는 다시 가능하다. 키가 클라이언트 안에 있는 한 평문은 어느 순간 메모리에 존재하기 때문이다. 난독화·패킹·anti-debug는 공격 비용을 <b>라운드마다 올리는 지연 수단</b>일 뿐, 신뢰 기점은 클라이언트 밖 &mdash; <b>서버 검증 또는 하드웨어 기반 증명</b>에 둬야 한다.
+</div>
+
+<h2>방어 측 권고</h2>
+<ul>
+  <li>패킹은 분석 지연용으로만 쓰고, <b>무결성·인가 판정을 서버로</b> 이전한다(클라 판정은 복원·우회 가능).</li>
+  <li>키를 클라이언트에 두지 않는다 &mdash; 원격 키 전달/증명(remote attestation), 하드웨어 보안요소(StrongBox/TEE) 결합.</li>
+  <li>복호 시점 덤프를 올리려면 <b>단계적 복호·anti-dump(복호 직후 재암호·memfd 탐지)</b>를 병행하되, 어느 것도 결정적 경계가 아님을 전제로 설계한다.</li>
+</ul>
+
+<footer>
+  <p>자작 데모 &middot; 완전공개 &middot; 재현 가능(소스·빌드·덤프 스크립트 포함) &middot;
+     <a href="../../methodology.html">방법론</a> &middot; <a href="../../index.html">포트폴리오 홈</a></p>
+</footer>
+
+</div>
+</body>
+</html>
