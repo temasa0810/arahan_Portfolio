@@ -221,7 +221,7 @@ return if (digest == EXPECTED_SIG) CLEAR else DETECTED   <span class="c">// 재�
 <p><b>우회:</b> <code>getPackageInfo</code>/<code>signingInfo</code>를 Java 레벨서 후킹해 원본 서명을 반환하도록 강제(판정 소비 지점 공략 &mdash; verdict-level과 같은 성격).</p>
 
 <h2 id="s5">5. 우회 로직 (mbguard_bypass.js)</h2>
-<p>우회는 모두 <b>트램폴린을 쓰지 않는(no-trampoline)</b> 기법으로 구성했다 — 실제 게임 안티치트(ACE/NMSS)가
+<p>우회는 모두 <b>트램폴린을 쓰지 않는(no-trampoline)</b> 기법으로 구성했다 — 상용 게임 안티치트가
 <code>Interceptor</code>(코드 패치)를 즉시 탐지/차단하므로 쓰는 GOT·테이블 리다이렉트 방식과 동일한 원리다.
 frida 17 특성상 Java 브리지 사용 스크립트는 <code>frida-compile</code> 번들(<code>.compiled.js</code>)로 로드한다.</p>
 

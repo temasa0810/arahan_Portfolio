@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 사례: 게임 엔진별(Unreal·Unity) 전투 분석 비교. 실명 표기, 방어 연구 목적, 오프셋·우회코드 미포함, 실측/미규명 구분. -->
+<!-- 사례: 게임 엔진별(Unreal·Unity) 전투 분석 비교. 대상 익명화(엔진·장르 수준), 방어 연구 목적, 오프셋·우회코드 미포함, 실측/미규명 구분. -->
 <html lang="ko">
 <head>
 <meta name="robots" content="noindex, nofollow">
@@ -55,7 +55,7 @@
 
 <header class="top">
   <h1>게임 엔진별 전투 분석 비교 &mdash; Unreal &middot; Unity</h1>
-  <div class="meta">동일한 분석 파이프라인으로 엔진별 대표 게임을 분석하고, 보안 설계의 잘된 점·안된 점과 개선방안을 비교한다 &middot; 인가된 분석 &middot; 방어 연구</div>
+  <div class="meta">동일한 분석 파이프라인으로 엔진별 대표 사례를 분석하고, 보안 설계의 잘된 점·안된 점과 개선방안을 비교한다 &middot; 개인 보안 연구 &middot; 방어 목적 &middot; 대상 익명화</div>
 </header>
 
 <div class="banner">
@@ -65,9 +65,9 @@
 </div>
 
 <div class="notice">
-  <b>공개 범위 고지.</b> 모든 분석은 인가된 환경에서 수행한 <b>방어 목적</b> 연구다.
-  결과는 방법론·설계 평가·개선방안 수준으로 기술하며, <b>실제 오프셋·주소·동작 우회 코드·암호화 키·완성된 치트는 포함하지 않는다.</b>
-  판정은 프로젝트 규율에 따라 <span class="tag conf">확정</span>(런타임 실측)과 <span class="tag unk">미규명</span>(실측 미확보)으로 구분 표기한다.
+  <b>공개 범위·대상 고지.</b> 본 비교는 공개된 상용 게임을 대상으로 한 <b>개인 보안 설계 연구</b>로, 특정 퍼블리셔의 의뢰·인가를 받은 것이 아니며 대상은 <b>익명화(엔진·장르 수준)</b>했다.
+  결과는 방법론·설계 평가·개선방안 수준으로만 기술하며, <b>실제 오프셋·주소·동작 우회 코드·암호화 키·완성된 치트는 포함하지 않고 어떤 조작 도구도 배포하지 않는다.</b>
+  판정은 <span class="tag conf">확정</span>(런타임 실측)과 <span class="tag unk">미규명</span>(실측 미확보)으로 구분 표기한다.
 </div>
 
 <h2>분석 파이프라인 (공통 6단계)</h2>
@@ -82,42 +82,42 @@
    실측 전에는 <span class="tag unk">미규명</span>으로 남긴다.</p>
 
 <!-- ===================== Unreal ===================== -->
-<h2>Unreal Engine &mdash; 명조(鳴潮) vs STAR DIVE</h2>
+<h2>Unreal Engine &mdash; 사례 A(UE4) vs 사례 B(UE5)</h2>
 <p>둘 다 Unreal 기반에 네이티브 안티치트를 얹었지만, <b>전투 핵심값의 신뢰 위치</b>에서 정반대 결과가 나왔다.</p>
 
 <table class="cmp">
   <thead>
     <tr>
       <th class="step">단계</th>
-      <th>명조 (WuWa, Kuro)<span class="engine">UE4 + ACE</span></th>
-      <th>STAR DIVE (Netmarble)<span class="engine">UE5 + NMSS</span></th>
+      <th>사례 A<span class="engine">UE4 · 오픈월드 액션 RPG</span></th>
+      <th>사례 B<span class="engine">UE5 · 모바일 액션</span></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th class="step">1. 우회</th>
       <td>florida spawn 시 검은 화면·ANR로 실패 &rarr; 특정 주입 방식이 필요. 루트 탐지는 스레드/파일 denylist 회피로 통과.</td>
-      <td>florida <b>spawn은 생존</b>(탐지 미발동), late-attach는 t+7s에 네이티브 자가종료. <b>.text 후킹 시 ~35s "보안 검증 실패" 팝업 후 종료</b>(NMSS 무결성 서명 탐지). 트램폴린 없는 리다이렉트·단발 하드웨어 워치포인트만 ACE-safe.</td>
+      <td>florida <b>spawn은 생존</b>(탐지 미발동), late-attach는 t+7s에 네이티브 자가종료. <b>.text 후킹 시 ~35s "보안 검증 실패"류 팝업 후 종료</b>(보안솔루션 .text 무결성 서명 탐지). 트램폴린 없는 리다이렉트·단발 하드웨어 워치포인트만 탐지 회피 가능.</td>
     </tr>
     <tr>
       <th class="step">2. SDK 덤프</th>
-      <td>엔진 바이너리가 <b>심볼 노출(unstripped)</b> &mdash; 분석 지점 식별은 쉬우나, 런타임 <b>핫패치(Tinker)</b>로 정적 오프셋이 수시로 무효화되어 재도출이 강제된다.</td>
+      <td>엔진 바이너리가 <b>심볼 노출(unstripped)</b> &mdash; 분석 지점 식별은 쉬우나, 런타임 <b>핫패치(코드 재작성)</b>로 정적 오프셋이 수시로 무효화되어 재도출이 강제된다.</td>
       <td>엔진 바이너리 완전 stripped(심볼 0) &rarr; UE 오브젝트 리플렉션으로 4만+ 클래스를 런타임 순회해 구조를 복원. SDK 필드 오프셋은 가려짐.</td>
     </tr>
     <tr>
       <th class="step">3. 전투 로직</th>
       <td>전투 로직이 <b>Mono C#(스크립트) 레이어</b>에 존재함을 식별.</td>
-      <td>스킬 히트 &rarr; 데미지 적용 경로를 식별. 데미지 값은 <b>SecureInt(XOR 기반 암호화 정수)</b>로 저장되어 평문 값-스캔이 불가능.</td>
+      <td>스킬 히트 &rarr; 데미지 적용 경로를 식별. 데미지 값은 <b>암호화 정수(XOR 기반)</b>로 저장되어 평문 값-스캔이 불가능.</td>
     </tr>
     <tr>
       <th class="step">4. Frida 실로직</th>
       <td>노출된 심볼을 직접 후킹해 전투 핸들러의 실제 발동을 확인.</td>
-      <td><b>.text를 건드리지 않는</b> 함수 포인터 리다이렉트 + 단발 하드웨어 워치포인트로 NMSS 무결성 검사를 피해 <b>적용 데미지 값 read에 성공</b>.</td>
+      <td><b>.text를 건드리지 않는</b> 함수 포인터 리다이렉트 + 단발 하드웨어 워치포인트로 보안솔루션 무결성 검사를 피해 <b>적용 데미지 값 read에 성공</b>.</td>
     </tr>
     <tr>
       <th class="step">5. 권위</th>
       <td><span class="tag conf">확정</span> 클라이언트 저장 HP가 <b>전 계층 미러</b>임을 규명 &mdash; 값을 동기화 핀/조작해도 캐릭터는 정상 사망(로컬 조작 무효).<br><span class="tag conf">확정</span> 반면 <b>크리티컬 강제 발동(항상 크리) 조작은 실제 반영</b> &mdash; 크리 판정은 클라이언트 영향권(HP 미러와 달리 조작이 통함).<br><span class="tag unk">미규명</span> 서버 권위 자체·데미지 수치 경로 조작 가능성.</td>
-      <td><span class="tag conf">확정</span> <b>아군 HP 무적</b>(값 고정 시 피격 무피해·생존) + <b>몬스터 HP 조작</b>(값 감소 → 즉시 처치 등) + <b>이동속도 조작(스피드핵) 실제 작동</b> &mdash; HP·이동 등 핵심 전투값이 클라이언트 권위.<br><span class="tag unk">미규명</span> 데미지 수치 조작(진짜 공격력 필드 미발견 + SecureInt 암호화).</td>
+      <td><span class="tag conf">확정</span> <b>아군 HP 무적</b>(값 고정 시 피격 무피해·생존) + <b>몬스터 HP 조작</b>(값 감소 → 즉시 처치 등) + <b>이동속도 조작(스피드핵) 실제 작동</b> &mdash; HP·이동 등 핵심 전투값이 클라이언트 권위.<br><span class="tag unk">미규명</span> 데미지 수치 조작(진짜 공격력 필드 미발견 + 암호화 정수).</td>
     </tr>
     <tr>
       <th class="step">6. 결론</th>
@@ -131,42 +131,42 @@
   <div class="vbox good">
     <h4>잘된 점</h4>
     <ul>
-      <li><b>명조</b> &mdash; 접근 가능한 HP가 전부 미러(로컬 조작 무효). 런타임 핫패치로 정적 분석 비용을 크게 올림.</li>
-      <li><b>STAR DIVE</b> &mdash; .text 무결성 서명으로 트램폴린(코드 패치) 후킹을 차단. 데미지를 암호화 정수로 저장.</li>
+      <li><b>사례 A</b> &mdash; 접근 가능한 HP가 전부 미러(로컬 조작 무효). 런타임 핫패치로 정적 분석 비용을 크게 올림.</li>
+      <li><b>사례 B</b> &mdash; .text 무결성 서명으로 트램폴린(코드 패치) 후킹을 차단. 데미지를 암호화 정수로 저장.</li>
     </ul>
   </div>
   <div class="vbox bad">
     <h4>안된 점</h4>
     <ul>
-      <li><b>명조</b> &mdash; 엔진 심볼이 노출(unstripped)되어 전투 후킹 지점 식별이 쉬움. <b>크리티컬 강제 발동 조작이 작동</b>(크리 판정이 클라 신뢰).</li>
-      <li><b>STAR DIVE</b> &mdash; HP·이동속도가 클라 권위 &rarr; <b>아군 HP 무적 + 몬스터 HP 조작(즉시 처치 등)</b>·스피드핵이 실제로 성립(치명). 오브젝트 테이블은 .text-free 후킹에 노출.</li>
+      <li><b>사례 A</b> &mdash; 엔진 심볼이 노출(unstripped)되어 전투 후킹 지점 식별이 쉬움. <b>크리티컬 강제 발동 조작이 작동</b>(크리 판정이 클라 신뢰).</li>
+      <li><b>사례 B</b> &mdash; HP·이동속도가 클라 권위 &rarr; <b>아군 HP 무적 + 몬스터 HP 조작(즉시 처치 등)</b>·스피드핵이 실제로 성립(치명). 오브젝트 테이블은 .text-free 후킹에 노출.</li>
     </ul>
   </div>
 </div>
 
 <div class="fix">
   <b>개선방안.</b>
-  <b>STAR DIVE</b> &mdash; 아군/몬스터 HP·이동속도 등 핵심 전투값을 서버 권위/검증으로 이전하고, 비정상 델타(순간 이동·무피해·몬스터 HP 급감)를 서버가 거부·롤백. 데미지 SecureInt는 복호 측 무결성 검증이 약하므로 서버 재계산·교차검증을 병행.
-  <b>명조</b> &mdash; 전투 관련 심볼을 strip·은닉해 후킹 지점 노출을 줄이면, 이미 우수한 미러 설계와 맞물려 분석 비용이 더 커진다.
+  <b>사례 B</b> &mdash; 아군/몬스터 HP·이동속도 등 핵심 전투값을 서버 권위/검증으로 이전하고, 비정상 델타(순간 이동·무피해·몬스터 HP 급감)를 서버가 거부·롤백. 데미지 암호화 정수는 복호 측 무결성 검증이 약하므로 서버 재계산·교차검증을 병행.
+  <b>사례 A</b> &mdash; 전투 관련 심볼을 strip·은닉해 후킹 지점 노출을 줄이면, 이미 우수한 미러 설계와 맞물려 분석 비용이 더 커진다.
 </div>
 
 <!-- ===================== Unity ===================== -->
-<h2>Unity (IL2CPP) &mdash; 원신(原神) vs 나 혼자만 레벨업: ARISE</h2>
+<h2>Unity (IL2CPP) &mdash; 사례 C vs 사례 D</h2>
 <p>둘 다 Unity IL2CPP지만, <b>코드 보호 강도</b>와 <b>전투값을 지키는 방식</b>이 대조적이다.</p>
 
 <table class="cmp">
   <thead>
     <tr>
       <th class="step">단계</th>
-      <th>원신 (HoYoverse)<span class="engine">Unity IL2CPP · 커스텀</span></th>
-      <th>나혼렙: ARISE (Netmarble)<span class="engine">Unity IL2CPP · EAC+NMSS</span></th>
+      <th>사례 C<span class="engine">Unity IL2CPP · 오픈월드 RPG</span></th>
+      <th>사례 D<span class="engine">Unity IL2CPP · 액션 RPG</span></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th class="step">1. 우회</th>
-      <td>상호 ptrace 등으로 attach를 전면 차단 &rarr; <b>함수 포인터 리다이렉트(.text 무접촉)</b>로 ACE-safe foothold 확보.</td>
-      <td>EAC + NMSS 환경. IL2CPP 코드 영역은 트램폴린 스캔 대상이 아니라 후킹이 생존 &rarr; 브리지 기반 계측으로 접근.</td>
+      <td>상호 ptrace 등으로 attach를 전면 차단 &rarr; <b>함수 포인터 리다이렉트(.text 무접촉)</b>로 안티치트 탐지 없이 foothold 확보.</td>
+      <td>상용 안티치트 + 네이티브 보안솔루션 환경. IL2CPP 코드 영역은 트램폴린 스캔 대상이 아니라 후킹이 생존 &rarr; 브리지 기반 계측으로 접근.</td>
     </tr>
     <tr>
       <th class="step">2. SDK 덤프</th>
@@ -186,12 +186,12 @@
     <tr>
       <th class="step">5. 권위</th>
       <td><span class="tag conf">확정</span> 데미지는 클라 계산이지만, <b>표시 데미지·HP는 화면 표시용(cosmetic)</b> &mdash; 덮어써도 게임플레이 무영향. 실제 HP는 <b>값마다 다른 salt로 인코딩</b>되어 값-스캔이 봉쇄. <b>6개 각도의 조작이 전부 무효</b>(실적용 격리) 실증.</td>
-      <td><b>랭킹/경쟁 콘텐츠</b>: 분석 과정에서 <b>NMSS 무결성 · 서버 챌린지-응답 · 전투 로그 감사</b> 구조를 확인 &mdash; 조작 시 서버 검증·밴 대상.<br><span class="tag unk">미규명</span> 실제 밴 발동은 라이브 계정 리스크로 조작 미실행(구조 분석 기반 평가).<br><span class="tag conf">확정</span> <b>비랭킹(일반) 콘텐츠</b>: 동일 조작이 <b>그대로 반영되고 밴 없음</b> &rarr; 일반 전투는 클라이언트 신뢰(서버 감사 미적용).</td>
+      <td><b>랭킹/경쟁 콘텐츠</b>: 분석 과정에서 <b>보안솔루션 메모리 무결성 · 서버 챌린지-응답 · 전투 로그 감사</b> 구조를 확인 &mdash; 조작 시 서버 검증·밴 대상.<br><span class="tag unk">미규명</span> 실제 밴 발동은 라이브 계정 리스크로 조작 미실행(구조 분석 기반 평가).<br><span class="tag conf">확정</span> <b>비랭킹(일반) 콘텐츠</b>: 동일 조작이 <b>그대로 반영되고 밴 없음</b> &rarr; 일반 전투는 클라이언트 신뢰(서버 감사 미적용).</td>
     </tr>
     <tr>
       <th class="step">6. 결론</th>
       <td>코드 보호(복호기 자작 강제)와 <b>표시/권위 분리 + salted 인코딩</b>이 모범적. 단일 클라 핸들로는 전투값 조작 불가.</td>
-      <td>서버 감사·NMSS 검증 구조는 <b>랭킹 콘텐츠에 국한</b>(분석에서 확인). 비랭킹 전투는 클라 조작이 반영되고 데미지 공식·패킷 구조도 노출됨.</td>
+      <td>서버 감사·보안솔루션 검증 구조는 <b>랭킹 콘텐츠에 국한</b>(분석에서 확인). 비랭킹 전투는 클라 조작이 반영되고 데미지 공식·패킷 구조도 노출됨.</td>
     </tr>
   </tbody>
 </table>
@@ -200,36 +200,36 @@
   <div class="vbox good">
     <h4>잘된 점</h4>
     <ul>
-      <li><b>원신</b> &mdash; 커스텀 메타데이터 암호화로 분석 진입장벽 최상. 표시값과 실제 적용값을 분리하고 실제 HP를 salt 인코딩해, 조작을 구조적으로 무의미화.</li>
-      <li><b>나혼렙</b> &mdash; <b>랭킹 콘텐츠</b>는 서버 감사·검증 구조를 갖춤(분석 확인 &mdash; 랭킹 조작은 서버 검증·밴 대상). NMSS 보안 값·검증 패킷으로 메모리 무결성 보강.</li>
+      <li><b>사례 C</b> &mdash; 커스텀 메타데이터 암호화로 분석 진입장벽 최상. 표시값과 실제 적용값을 분리하고 실제 HP를 salt 인코딩해, 조작을 구조적으로 무의미화.</li>
+      <li><b>사례 D</b> &mdash; <b>랭킹 콘텐츠</b>는 서버 감사·검증 구조를 갖춤(분석 확인 &mdash; 랭킹 조작은 서버 검증·밴 대상). 보안솔루션 보안 값·검증 패킷으로 메모리 무결성 보강.</li>
     </ul>
   </div>
   <div class="vbox bad">
     <h4>안된 점</h4>
     <ul>
-      <li><b>원신</b> &mdash; (실측 범위 내) 치명적 클라 취약은 미발견. 분석 비용이 매우 높아 실제 적용값까지의 도달 난도가 높다 &mdash; 방어 측엔 강점.</li>
-      <li><b>나혼렙</b> &mdash; <b>비랭킹 전투는 클라 조작이 그대로 반영(밴 없음)</b>. 데미지 공식이 클라에서 완전 복원되고 전송 패킷 구조가 노출 &rarr; 방어가 랭킹 서버 감사에만 의존.</li>
+      <li><b>사례 C</b> &mdash; (실측 범위 내) 치명적 클라 취약은 미발견. 분석 비용이 매우 높아 실제 적용값까지의 도달 난도가 높다 &mdash; 방어 측엔 강점.</li>
+      <li><b>사례 D</b> &mdash; <b>비랭킹 전투는 클라 조작이 그대로 반영(밴 없음)</b>. 데미지 공식이 클라에서 완전 복원되고 전송 패킷 구조가 노출 &rarr; 방어가 랭킹 서버 감사에만 의존.</li>
     </ul>
   </div>
 </div>
 
 <div class="fix">
   <b>개선방안.</b>
-  <b>나혼렙</b> &mdash; 서버 감사·검증을 <b>랭킹뿐 아니라 일반 전투 전반으로 확대</b>하고, 데미지 계산을 서버로 이전하거나 핵심 상수를 서버에 보관하고, 전송 패킷을 암호화·서명해 공식 역산·예측 비용을 올린다(현재는 랭킹 밖 전투가 클라 신뢰).
-  <b>원신</b> &mdash; 현재의 표시/권위 분리와 salted 인코딩 수준을 민감 전투값 전반에 유지하면 충분하다(모범 사례).
+  <b>사례 D</b> &mdash; 서버 감사·검증을 <b>랭킹뿐 아니라 일반 전투 전반으로 확대</b>하고, 데미지 계산을 서버로 이전하거나 핵심 상수를 서버에 보관하고, 전송 패킷을 암호화·서명해 공식 역산·예측 비용을 올린다(현재는 랭킹 밖 전투가 클라 신뢰).
+  <b>사례 C</b> &mdash; 현재의 표시/권위 분리와 salted 인코딩 수준을 민감 전투값 전반에 유지하면 충분하다(모범 사례).
 </div>
 
 <!-- ===================== 종합 ===================== -->
-<h2>종합 &mdash; 네 게임이 주는 교훈</h2>
+<h2>종합 &mdash; 네 사례가 주는 교훈</h2>
 <table class="cmp">
   <thead>
     <tr><th class="step" style="width:150px">축</th><th>비교</th></tr>
   </thead>
   <tbody>
-    <tr><th class="step">코드 보호(분석 난도)</th><td>원신(커스텀 메타데이터 암호화) &gt; 명조(런타임 핫패치) &gt; STAR DIVE &middot; 나혼렙(표준 덤프 가능).</td></tr>
-    <tr><th class="step">전투값 방어</th><td>원신(표시/권위 분리+salted, 조작 무효 실증)이 최상 &middot; 나혼렙(랭킹=서버 감사·검증 구조 확인, 단 <b>비랭킹은 클라 조작 반영</b>) &middot; 명조(HP 미러 실증, 단 크리티컬 강제는 작동). <b>STAR DIVE가 가장 취약</b>(아군·몬스터 HP·스피드핵 실증).</td></tr>
-    <tr><th class="step">안티치트의 한계</th><td>.text 무결성·주입 차단만으로는 <b>전투 값 조작을 막지 못한다</b> &mdash; 핵심 값은 서버 권위/검증 또는 암호화 격리가 필요(STAR DIVE가 반례, 원신이 모범, 나혼렙은 랭킹 한정 모범).</td></tr>
-    <tr><th class="step">방법론 규율</th><td>"서버 권위 / 미러 / cosmetic" 같은 <b>긍정 결론도 실측 전엔 미규명</b>으로 남긴다. 명조·STAR DIVE의 데미지 권위는 <span class="tag unk">미규명</span>으로 표기했다.</td></tr>
+    <tr><th class="step">코드 보호(분석 난도)</th><td>사례 C(커스텀 메타데이터 암호화) &gt; 사례 A(런타임 핫패치) &gt; 사례 B &middot; 사례 D(표준 덤프 가능).</td></tr>
+    <tr><th class="step">전투값 방어</th><td>사례 C(표시/권위 분리+salted, 조작 무효 실증)가 최상 &middot; 사례 D(랭킹=서버 감사·검증 구조 확인, 단 <b>비랭킹은 클라 조작 반영</b>) &middot; 사례 A(HP 미러 실증, 단 크리티컬 강제는 작동). <b>사례 B가 상대적으로 취약</b>(아군·몬스터 HP·스피드핵 실증).</td></tr>
+    <tr><th class="step">안티치트의 한계</th><td>.text 무결성·주입 차단만으로는 <b>전투 값 조작을 막지 못한다</b> &mdash; 핵심 값은 서버 권위/검증 또는 암호화 격리가 필요(사례 B가 반례, 사례 C가 모범, 사례 D는 랭킹 한정 모범).</td></tr>
+    <tr><th class="step">방법론 규율</th><td>"서버 권위 / 미러 / cosmetic" 같은 <b>긍정 결론도 실측 전엔 미규명</b>으로 남긴다. 사례 A·사례 B의 데미지 권위는 <span class="tag unk">미규명</span>으로 표기했다.</td></tr>
   </tbody>
 </table>
 

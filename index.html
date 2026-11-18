@@ -136,7 +136,7 @@
 
 <div class="terms">
   <p><b>RASP</b> (Runtime Application Self-Protection) &mdash; 앱 내부에 통합되어 런타임(실행) 중 루팅·후킹 등 보안 위협을 실시간으로 탐지·차단하는 상용 보안 솔루션.</p>
-  <p><b>안티치트</b> &mdash; 게임 클라이언트의 메모리 변조·치팅을 탐지·차단하는 보호. RASP와 기법이 대부분 겹친다(예: ACE·NMSS).</p>
+  <p><b>안티치트</b> &mdash; 게임 클라이언트의 메모리 변조·치팅을 탐지·차단하는 보호. RASP와 기법이 대부분 겹친다(상용 안티치트·보안솔루션).</p>
   <p><b>후킹 / Frida</b> &mdash; 실행 중인 앱의 함수를 가로채 동작을 관찰·변경하는 동적 분석 기법과 대표 도구.</p>
   <p><b>IL2CPP</b> &mdash; Unity 게임을 C++ 네이티브로 변환해 컴파일하는 빌드 방식. 코드가 기계어가 되어 정적 분석 난도가 크게 오른다.</p>
 </div>
@@ -217,7 +217,7 @@
   <div class="card">
     <span class="tag ctf">엔진 비교 · 방어 연구</span>
     <h3>게임 전투 분석 비교</h3>
-    <p class="role">§ Unreal(명조·STAR DIVE)·Unity(원신·나혼렙) 전투값 권위 비교 + 개선방안</p>
+    <p class="role">§ Unreal·Unity(IL2CPP) 엔진별 대표 사례의 전투값 클라/서버 권위 비교 + 개선방안(대상 익명화)</p>
     <a class="btn" href="cases/05-game-combat/index.html">비교 보기</a>
   </div>
 
@@ -230,7 +230,7 @@
   <div class="stat"><div class="n">다수</div><div class="l">공인 CTF 리버싱 풀이</div></div>
   <div class="stat"><div class="n">5 + 1</div><div class="l">전용 분석 에이전트 + 반대자</div></div>
 </div>
-<p class="muted" style="margin-top:12px">상용 안티치트(ACE 계열) · 상용 RASP(금융권) · Unity IL2CPP 난독화 등 <b>고난도 환경</b> 포함.</p>
+<p class="muted" style="margin-top:12px">상용 네이티브 안티치트 계열 · 상용 RASP(금융권) · Unity IL2CPP 난독화 등 <b>고난도 환경</b> 포함.</p>
 
 <footer>
   <p><b>비공개·비배포 안내.</b> MB_BYPASS 원본은 상용·금융 앱 동작 우회 로직을 포함하므로 소스를 배포하지 않는다.
