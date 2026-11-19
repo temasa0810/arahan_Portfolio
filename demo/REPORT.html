@@ -82,7 +82,7 @@
 
 <h2 id="s1">1. 개요</h2>
 <p>MBGuard-Demo는 안드로이드 보안 솔루션(RASP)이 쓰는 <b>루팅 탐지</b>와 <b>Frida/후킹 탐지</b> 기법을,
-그리고 그 각각을 <b>우회</b>하는 기법을 하나의 앱에서 실시간으로 보여주는 교육용 자작 앱이다.
+그리고 그 각각을 <b>우회</b>하는 기법을 하나의 앱에서 실시간으로 보여주는 교육용 앱이다.
 탐지에 성공해도 앱을 종료하지 않고 상태만 기록하여, 각 체크가 <span class="g">통과</span>/<span class="r">탐지됨</span>으로
 바뀌는 과정을 <b>현황판</b>으로 관찰할 수 있다.</p>
 <p>핵심 목표는 "어떤 탐지가 실제로 작동하고, 어떤 우회가 그것을 무력화하며, 다시 어떻게 방어를 강화하는가"를
@@ -101,7 +101,7 @@ frida 서버(florida 17.26.2) 부착 유무를 A/B로 비교해 확인했다.</p
 
 <h2 id="s3">3. 탐지 로직 — Frida/후킹 6종</h2>
 <p><span class="tag frida">Frida/후킹</span> 아래 6종은 "frida가 내 프로세스에 주입/후킹했는가"를 서로 다른 각도에서 본다.
-얕은 지문(이름·경로·포트)부터 행위 기반(메모리 속성·무결성)까지 깊이가 점증한다.</p>
+얕은 지문(이름·경로·포트)부터 행위 기반(메모리 속성·무결성)까지 깊이가 점증한다(LV1-LV2-LV3).</p>
 
 <h3>[0] 스레드명 스캔</h3>
 <p><code>/proc/self/task/&lt;tid&gt;/comm</code>을 순회하며 frida가 심는 전형적 스레드명
@@ -120,12 +120,12 @@ if (fgets(comm, sizeof(comm), f) &amp;&amp; looks_like_frida(comm)) hit = 1;</pr
 <p><code>/proc/self/status</code>의 <code>TracerPid</code>가 0이 아니면 디버거/트레이서가 붙은 것으로 본다.</p>
 <pre>if (strncmp(line, "TracerPid:", 10) == 0) tracer = atoi(line + 10);
 return tracer != 0 ? DETECTED : CLEAR;</pre>
-<p><b>한계(실측):</b> frida(바닐라·florida 공통)는 ptrace로 <b>잠깐 주입하고 즉시 detach</b>한다. 주입 완료 후엔 항상
+<p><b>한계(실측):</b> frida(순정·florida 공통)는 ptrace로 <b>잠깐 주입하고 즉시 detach</b>한다. 주입 완료 후엔 항상
 <code>TracerPid=0</code>, <code>State: S</code>이므로 <b>정상상태의 frida를 탐지하지 못한다</b>. 교육용으로 존치하되, frida 탐지엔 무용함을 명시한다.</p>
 
 <h3>[3] 트램폴린 / 인라인훅</h3>
 <p>로드 시 <code>access()</code>의 prologue 16바이트를 스냅샷(baseline)해 두고, 매 루프마다 현재 바이트와 비교한다.
-Interceptor류 인라인 훅이 함수 앞부분을 트램폴린으로 덮으면 바이트가 달라져 탐지된다.</p>
+Interceptor류 인라인 훅이 함수 앞부분을 트램폴린(원본 명령을 점프 코드로 바꿔치기하는 코드 패치형 훅)으로 덮으면 바이트가 달라져 탐지된다.</p>
 <pre>g_acc_addr = dlsym(RTLD_DEFAULT, "access");
 memcpy(g_acc_base, g_acc_addr, 16);          <span class="c">// 로드 시 baseline</span>
 ...
@@ -296,7 +296,7 @@ GOT 리다이렉트할 libc 함수를 없앴고(라5), 그로 인해 공격자�
   <li><b>florida 17.26.2 스레드명 스텔스.</b> 구 florida는 <code>gum-js-loop</code>/<code>gmain</code>을 노출했으나,
     17.26.2는 <code>pool-0</code>/<code>pool-spawner</code>로 리네임하여 스레드명 스캔을 회피한다(공식 변경로그엔 미기재, 실측으로만 확인).
     &rarr; <b>버전 업만으로 단순 comm 블랙리스트 탐지가 무력화</b>된다.</li>
-  <li><b>포트 탐지는 SELinux로 원리적 무력.</b> 바닐라 frida-server가 27042에 리슨해도, untrusted 앱은
+  <li><b>포트 탐지는 SELinux로 원리적 무력.</b> 순정 frida-server가 27042에 리슨해도, untrusted 앱은
     SELinux Enforcing에 의해 <code>connect(27042)</code>=EPERM, <code>/proc/net/tcp</code> 읽기=Permission denied로 둘 다 차단된다
     (shell/adbd는 가능, 앱만 불가). 포트는 공격자가 바꿀 수도 있어, 포트 기반 탐지는 폐기했다.</li>
   <li><b>ptrace/TracerPid는 frida에 무용.</b> frida는 주입 후 detach하여 정상상태 <code>TracerPid=0</code>.</li>
