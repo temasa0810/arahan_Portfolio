@@ -96,7 +96,7 @@
   <tbody>
     <tr>
       <th class="step">1. 우회</th>
-      <td>florida spawn 시 검은 화면·ANR로 실패 &rarr; 특정 주입 방식이 필요. 루트 탐지는 스레드/파일 denylist 회피로 통과.</td>
+      <td>florida spawn 시 검은 화면·ANR(앱 응답 없음)로 실패 &rarr; 특정 주입 방식이 필요. 루트 탐지는 스레드/파일 denylist 회피로 통과.</td>
       <td>florida <b>spawn은 생존</b>(탐지 미발동), late-attach는 t+7s에 네이티브 자가종료. <b>.text 후킹 시 ~35s "보안 검증 실패"류 팝업 후 종료</b>(보안솔루션 .text 무결성 서명 탐지). 트램폴린 없는 리다이렉트·단발 하드웨어 워치포인트만 탐지 회피 가능.</td>
     </tr>
     <tr>
@@ -185,7 +185,7 @@
     </tr>
     <tr>
       <th class="step">5. 권위</th>
-      <td><span class="tag conf">확정</span> 데미지는 클라 계산이지만, <b>표시 데미지·HP는 화면 표시용(cosmetic)</b> &mdash; 덮어써도 게임플레이 무영향. 실제 HP는 <b>값마다 다른 salt로 인코딩</b>되어 값-스캔이 봉쇄. <b>6개 각도의 조작이 전부 무효</b>(실적용 격리) 실증.</td>
+      <td><span class="tag conf">확정</span> 데미지는 클라 계산이지만, <b>표시 데미지·HP는 화면 표시용</b> &mdash; 덮어써도 게임플레이 무영향. 실제 HP는 <b>값마다 다른 salt로 인코딩</b>되어 값-스캔이 봉쇄. <b>6개 각도의 조작이 전부 무효</b>(실적용 격리) 실증.</td>
       <td><b>랭킹/경쟁 콘텐츠</b>: 분석 과정에서 <b>보안솔루션 메모리 무결성 · 서버 챌린지-응답 · 전투 로그 감사</b> 구조를 확인 &mdash; 조작 시 서버 검증·밴 대상.<br><span class="tag unk">미규명</span> 실제 밴 발동은 라이브 계정 리스크로 조작 미실행(구조 분석 기반 평가).<br><span class="tag conf">확정</span> <b>비랭킹(일반) 콘텐츠</b>: 동일 조작이 <b>그대로 반영되고 밴 없음</b> &rarr; 일반 전투는 클라이언트 신뢰(서버 감사 미적용).</td>
     </tr>
     <tr>
@@ -229,7 +229,7 @@
     <tr><th class="step">코드 보호(분석 난도)</th><td>사례 C(커스텀 메타데이터 암호화) &gt; 사례 A(런타임 핫패치) &gt; 사례 B &middot; 사례 D(표준 덤프 가능).</td></tr>
     <tr><th class="step">전투값 방어</th><td>사례 C(표시/권위 분리+salted, 조작 무효 실증)가 최상 &middot; 사례 D(랭킹=서버 감사·검증 구조 확인, 단 <b>비랭킹은 클라 조작 반영</b>) &middot; 사례 A(HP 미러 실증, 단 크리티컬 강제는 작동). <b>사례 B가 상대적으로 취약</b>(아군·몬스터 HP·스피드핵 실증).</td></tr>
     <tr><th class="step">안티치트의 한계</th><td>.text 무결성·주입 차단만으로는 <b>전투 값 조작을 막지 못한다</b> &mdash; 핵심 값은 서버 권위/검증 또는 암호화 격리가 필요(사례 B가 반례, 사례 C가 모범, 사례 D는 랭킹 한정 모범).</td></tr>
-    <tr><th class="step">방법론 규율</th><td>"서버 권위 / 미러 / cosmetic" 같은 <b>긍정 결론도 실측 전엔 미규명</b>으로 남긴다. 사례 A·사례 B의 데미지 권위는 <span class="tag unk">미규명</span>으로 표기했다.</td></tr>
+    <tr><th class="step">방법론 규율</th><td>"서버 권위 / 미러 / 화면 표시용" 같은 <b>긍정 결론도 실측 전엔 미규명</b>으로 남긴다. 사례 A·사례 B의 데미지 권위는 <span class="tag unk">미규명</span>으로 표기했다.</td></tr>
   </tbody>
 </table>
 
